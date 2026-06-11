@@ -1,0 +1,28 @@
+2026-06-11 12:37:22,174 [INFO] Device: cpu
+2026-06-11 12:37:22,174 [INFO] Output root: data/processed
+2026-06-11 12:37:22,255 [WARNING] Source folder not found, skipping: data/raw/DFDC/real
+2026-06-11 12:37:22,258 [WARNING] Source folder not found, skipping: data/raw/DFDC/fake
+2026-06-11 12:37:22,258 [WARNING] Source folder not found, skipping: data/raw/FaceForensics/real
+2026-06-11 12:37:22,259 [WARNING] Source folder not found, skipping: data/raw/FaceForensics/fake
+2026-06-11 12:37:22,259 [WARNING] Source folder not found, skipping: data/raw/CelebDF/real
+2026-06-11 12:37:22,261 [WARNING] Source folder not found, skipping: data/raw/CelebDF/fake
+2026-06-11 12:37:22,261 [INFO] ============================================================
+2026-06-11 12:37:22,261 [INFO] PREPROCESSING COMPLETE
+2026-06-11 12:37:22,261 [INFO]   Total videos found : 0
+2026-06-11 12:37:22,261 [INFO]   Processed          : 0
+2026-06-11 12:37:22,261 [INFO]   Failed / skipped   : 0
+2026-06-11 12:37:22,261 [INFO]   Already done (skip): 0
+2026-06-11 12:37:22,261 [INFO]   Output Real/       : 0 videos
+2026-06-11 12:37:22,261 [INFO]   Output Fake/       : 0 videos
+2026-06-11 12:37:22,261 [INFO] ============================================================
+2026-06-11 12:52:20,794 [INFO] Device: cpu
+2026-06-11 12:52:20,794 [INFO] Output root: data/processed
+2026-06-11 12:52:20,814 [INFO] Found 108 videos in data/final_dataset/Real → label=Real
+2026-06-11 12:55:18,253 [ERROR] VideoWriter failed to open: data/processed/Real/blszgmxkvu.mp4
+2026-06-11 12:55:18,256 [ERROR] [ERROR] Could not write video: data/processed/Real/blszgmxkvu.mp4
+2026-06-11 12:56:29,612 [ERROR] VideoWriter failed to open: data/processed/Real/bvpeerislp.mp4
+2026-06-11 12:56:29,613 [ERROR] [ERROR] Could not write video: data/processed/Real/bvpeerislp.mp4
+2026-06-11 12:56:59,136 [ERROR] VideoWriter failed to open: data/processed/Real/cnpanmywno.mp4
+2026-06-11 12:56:59,136 [ERROR] [ERROR] Could not write video: data/processed/Real/cnpanmywno.mp4
+2026-06-11 12:57:46,117 [ERROR] VideoWriter failed to open: data/processed/Real/comqkwjrft.mp4
+2026-06-11 12:57:46,119 [ERROR] [ERROR] Could not write video: data/processed/Real/comqkwjrft.mp4
