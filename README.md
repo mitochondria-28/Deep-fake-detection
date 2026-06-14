@@ -1,6 +1,6 @@
 # Detectra — Deepfake Detection System
 
-> Final Year Project — Pokhara University  
+> Final Year Project 
 > Hybrid ResNeXt50 + LSTM architecture for binary deepfake video classification
 
 ---
