@@ -1,0 +1,30 @@
+# webapp/gunicorn.conf.py
+"""
+Gunicorn production configuration.
+M1 Air 8GB: 2 workers maximum — each loads the full model into RAM.
+"""
+
+import multiprocessing
+
+# ── Workers ───────────────────────────────────────────────────────────────────
+# Rule of thumb: 2 × CPU cores + 1, but cap at 2 on 8GB RAM
+# because each worker holds ~500MB model in memory
+workers    = 2
+worker_class = "sync"
+timeout    = 120    # 2 min — inference can take 60s on CPU
+
+# ── Binding ───────────────────────────────────────────────────────────────────
+bind       = "0.0.0.0:8000"
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+accesslog  = "logs/gunicorn_access.log"
+errorlog   = "logs/gunicorn_error.log"
+loglevel   = "info"
+
+# ── Process naming ────────────────────────────────────────────────────────────
+proc_name  = "detectra"
+
+# ── Preload app (load model once, fork to workers) ────────────────────────────
+# This means the model is loaded ONCE in the master process,
+# then forked to workers — saving RAM significantly
+preload_app = True

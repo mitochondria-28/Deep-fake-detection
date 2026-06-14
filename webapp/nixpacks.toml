@@ -1,0 +1,9 @@
+# webapp/nixpacks.toml
+[phases.setup]
+nixPkgs = ["libGL", "libGLU", "mesa", "ffmpeg"]
+
+[phases.install]
+cmds = ["pip install -r requirements_web.txt"]
+
+[start]
+cmd = "gunicorn --config gunicorn.conf.py webapp.wsgi:application"

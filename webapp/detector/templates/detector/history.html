@@ -1,0 +1,181 @@
+<!-- webapp/detector/templates/detector/history.html -->
+{% extends "detector/base.html" %}
+{% block title %}Detectra — Prediction History{% endblock %}
+
+{% block content %}
+<style>
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: #12122a;
+    border: 1px solid #2a2a5a;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-card .num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #00d4ff;
+  }
+  .stat-card .lbl {
+    font-size: 0.75rem;
+    color: #7777aa;
+    margin-top: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+  th {
+    text-align: left;
+    padding: 12px 14px;
+    color: #7777aa;
+    font-weight: 600;
+    border-bottom: 1px solid #2a2a5a;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #1a1a3a;
+    color: #cccce8;
+    vertical-align: middle;
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .badge-REAL      { background: rgba(0,255,140,0.12); color: #00ff8c; }
+  .badge-FAKE      { background: rgba(255,60,60,0.12);  color: #ff5555; }
+  .badge-UNCERTAIN { background: rgba(255,200,0,0.12);  color: #ffc800; }
+  .conf-bar {
+    height: 6px;
+    background: #1e1e3e;
+    border-radius: 99px;
+    overflow: hidden;
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .conf-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: #00d4ff;
+    width: 0%;
+  }
+  a.view-link {
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 0.8rem;
+  }
+  a.view-link:hover { text-decoration: underline; }
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    color: #555577;
+  }
+</style>
+
+<div class="card">
+  <h1>Prediction History</h1>
+  <h2>All past analysis results stored in the database</h2>
+
+  <!-- ── Stats ── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">{{ counts.total }}</div>
+      <div class="lbl">Total Analyzed</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#00ff8c">{{ counts.real }}</div>
+      <div class="lbl">Classified Real</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#ff5555">{{ counts.fake }}</div>
+      <div class="lbl">Classified Fake</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#ffc800">{{ counts.uncertain }}</div>
+      <div class="lbl">Uncertain</div>
+    </div>
+  </div>
+
+  <!-- ── Table ── -->
+  {% if records %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Filename</th>
+        <th>Result</th>
+        <th>Confidence</th>
+        <th>Frames</th>
+        <th>Time</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td style="color:#555577">{{ r.pk }}</td>
+        <td style="max-width:180px;overflow:hidden;
+                   text-overflow:ellipsis;white-space:nowrap">
+          {{ r.filename }}
+        </td>
+        <td>
+          <span class="badge badge-{{ r.label }}">{{ r.label }}</span>
+        </td>
+        <td>
+          {{ r.confidence|floatformat:1 }}%
+          <span class="conf-bar">
+            <span class="conf-fill" data-width="{{ r.confidence }}"></span>
+          </span>
+        </td>
+        <td>{{ r.frames_analyzed }}</td>
+        <td>{{ r.processing_time|floatformat:1 }}s</td>
+        <td style="color:#666688;font-size:0.8rem">
+          {{ r.created_at|date:"M d, H:i" }}
+        </td>
+        <td>
+          <a class="view-link"
+             href="{% url 'detector:result' r.pk %}">View →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    No predictions yet.
+    <a href="/" style="color:#00d4ff">Upload a video</a> to get started.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // Set bar widths from data-width attributes after page load.
+  // Avoids Django template expressions inside style attributes
+  // which confuse the VS Code CSS linter.
+  document.querySelectorAll(".conf-fill[data-width]").forEach(function(el) {
+    var val = parseFloat(el.getAttribute("data-width"));
+    if (!isNaN(val)) {
+      el.style.width = Math.min(100, Math.max(0, val)) + "%";
+    }
+  });
+</script>
+
+{% endblock %}

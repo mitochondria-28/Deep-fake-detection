@@ -1,0 +1,57 @@
+============================================================
+  DETECTRA — EVALUATION REPORT
+  Step 6: Test Set Evaluation
+============================================================
+
+  Total test samples : 65
+  Real videos        : 33
+  Fake videos        : 32
+
+────────────────────────────────────────────────────────────
+  CONFUSION MATRIX
+────────────────────────────────────────────────────────────
+
+                 Predicted
+                 Real    Fake
+  Actual Real  [  28      5    ]   (TN, FP)
+  Actual Fake  [  1       31   ]   (FN, TP)
+
+────────────────────────────────────────────────────────────
+  METRICS (Fake = Positive class)
+────────────────────────────────────────────────────────────
+
+  Accuracy     = (TP+TN)/(TP+TN+FP+FN)
+               = (31+28)/(65)
+               = 90.7692%
+
+  Recall       = TP/(TP+FN)  [Sensitivity]
+               = 31/(31+1)
+               = 96.8750%
+
+  Specificity  = TN/(TN+FP)
+               = 28/(28+5)
+               = 84.8485%
+
+  Precision    = TP/(TP+FP)
+               = 31/(31+5)
+               = 86.1111%
+
+  F1-Score     = 2*(Precision*Recall)/(Precision+Recall)
+               = 91.1765%
+
+  AUC-ROC      = 0.9337
+
+────────────────────────────────────────────────────────────
+  SKLEARN CLASSIFICATION REPORT
+────────────────────────────────────────────────────────────
+
+              precision    recall  f1-score   support
+
+        Real     0.9655    0.8485    0.9032        33
+        Fake     0.8611    0.9688    0.9118        32
+
+    accuracy                         0.9077        65
+   macro avg     0.9133    0.9086    0.9075        65
+weighted avg     0.9141    0.9077    0.9074        65
+
+============================================================

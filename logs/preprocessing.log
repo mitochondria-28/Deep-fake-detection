@@ -26,3 +26,46 @@
 2026-06-11 12:56:59,136 [ERROR] [ERROR] Could not write video: data/processed/Real/cnpanmywno.mp4
 2026-06-11 12:57:46,117 [ERROR] VideoWriter failed to open: data/processed/Real/comqkwjrft.mp4
 2026-06-11 12:57:46,119 [ERROR] [ERROR] Could not write video: data/processed/Real/comqkwjrft.mp4
+2026-06-11 13:58:11,881 [INFO] Device: cpu
+2026-06-11 13:58:11,881 [INFO] Output root: data/processed
+2026-06-11 13:58:11,901 [WARNING] Source folder not found, skipping: data/final_dataset/Real
+2026-06-11 13:58:11,901 [WARNING] Source folder not found, skipping: data/final_dataset/Fake
+2026-06-11 13:58:11,901 [INFO] ============================================================
+2026-06-11 13:58:11,901 [INFO] PREPROCESSING COMPLETE
+2026-06-11 13:58:11,901 [INFO]   Total videos found : 0
+2026-06-11 13:58:11,901 [INFO]   Processed          : 0
+2026-06-11 13:58:11,901 [INFO]   Failed / skipped   : 0
+2026-06-11 13:58:11,901 [INFO]   Already done (skip): 0
+2026-06-11 13:58:11,901 [INFO]   Output Real/       : 0 videos
+2026-06-11 13:58:11,901 [INFO]   Output Fake/       : 0 videos
+2026-06-11 13:58:11,901 [INFO] ============================================================
+2026-06-11 13:58:36,472 [INFO] Device: cpu
+2026-06-11 13:58:36,472 [INFO] Output root: data/processed
+2026-06-11 13:58:36,501 [WARNING] Source folder not found, skipping: data/final_dataset/Real
+2026-06-11 13:58:36,501 [WARNING] Source folder not found, skipping: data/final_dataset/Fake
+2026-06-11 13:58:36,501 [INFO] ============================================================
+2026-06-11 13:58:36,501 [INFO] PREPROCESSING COMPLETE
+2026-06-11 13:58:36,501 [INFO]   Total videos found : 0
+2026-06-11 13:58:36,501 [INFO]   Processed          : 0
+2026-06-11 13:58:36,501 [INFO]   Failed / skipped   : 0
+2026-06-11 13:58:36,501 [INFO]   Already done (skip): 0
+2026-06-11 13:58:36,501 [INFO]   Output Real/       : 0 videos
+2026-06-11 13:58:36,501 [INFO]   Output Fake/       : 0 videos
+2026-06-11 13:58:36,501 [INFO] ============================================================
+2026-06-11 13:59:36,618 [INFO] Device: cpu
+2026-06-11 13:59:36,618 [INFO] Output root: data/processed
+2026-06-11 13:59:36,637 [INFO] Found 108 videos in data/final_dataset/Real → label=Real
+2026-06-11 16:31:06,252 [INFO] Found 1591 videos in data/final_dataset/Fake → label=Fake
+2026-06-11 20:14:44,883 [INFO] Device: cpu
+2026-06-11 20:14:44,883 [INFO] Output root: data/processed
+2026-06-11 20:14:44,905 [INFO] Found 108 videos in data/final_dataset/Real → label=Real
+2026-06-11 20:14:44,933 [INFO] Found 1591 videos in data/final_dataset/Fake → label=Fake
+2026-06-12 13:11:01,485 [INFO] ============================================================
+2026-06-12 13:11:01,508 [INFO] PREPROCESSING COMPLETE
+2026-06-12 13:11:01,508 [INFO]   Total videos found : 1699
+2026-06-12 13:11:01,508 [INFO]   Processed          : 1531
+2026-06-12 13:11:01,508 [INFO]   Failed / skipped   : 0
+2026-06-12 13:11:01,508 [INFO]   Already done (skip): 168
+2026-06-12 13:11:01,558 [INFO]   Output Real/       : 108 videos
+2026-06-12 13:11:01,558 [INFO]   Output Fake/       : 1591 videos
+2026-06-12 13:11:01,558 [INFO] ============================================================
