@@ -1,6 +1,6 @@
 # evaluation/evaluator.py
 """
-Detectra Evaluation Engine — Step 6
+Deepfakedetection Evaluation Engine — Step 6
 
 Loads best_acc.pt checkpoint, runs inference on the full test set,
 and computes:
@@ -28,14 +28,14 @@ from sklearn.metrics import (
     classification_report,
 )
 from torch.utils.data import DataLoader
-from model.detectra import Detectra
+from model.deepfakedetection import Deepfakedetection
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator:
     """
-    Loads a saved Detectra checkpoint and evaluates it on the test DataLoader.
+    Loads a saved Deepfakedetection checkpoint and evaluates it on the test DataLoader.
 
     Usage:
         evaluator = Evaluator(checkpoint_path, test_loader, device, results_dir)
@@ -56,9 +56,9 @@ class Evaluator:
 
         self.model = self._load_model(checkpoint_path)
 
-    def _load_model(self, checkpoint_path: str) -> Detectra:
+    def _load_model(self, checkpoint_path: str) -> Deepfakedetection:
         """
-        Load Detectra from a .pt checkpoint.
+        Load Deepfakedetection from a .pt checkpoint.
         Handles float16 → float32 casting automatically.
         """
         path = Path(checkpoint_path)
@@ -72,7 +72,7 @@ class Evaluator:
         checkpoint = torch.load(path, map_location="cpu")
 
         # ── Rebuild model architecture ────────────────────────────────────────
-        model = Detectra(pretrained=False)   # pretrained=False — we load our weights
+        model = Deepfakedetection(pretrained=False)   # pretrained=False — we load our weights
 
         # ── Cast float16 weights back to float32 if needed ────────────────────
         state_dict = checkpoint["model_state"]
@@ -241,7 +241,7 @@ class Evaluator:
         ax.set_xlabel("Predicted Label", fontsize=13, color="white", labelpad=10)
         ax.set_ylabel("True Label",      fontsize=13, color="white", labelpad=10)
         ax.set_title(
-            f"Detectra — Confusion Matrix\nAccuracy: {accuracy*100:.2f}%",
+            f"Deepfakedetection — Confusion Matrix\nAccuracy: {accuracy*100:.2f}%",
             fontsize=14, color="white", pad=15
         )
         ax.tick_params(colors="white")
@@ -286,7 +286,7 @@ class Evaluator:
         ax.set_ylabel("True Positive Rate (Recall/Sensitivity)",
                       fontsize=12, color="white", labelpad=10)
         ax.set_title(
-            "Detectra — AUC-ROC Curve",
+            "Deepfakedetection — AUC-ROC Curve",
             fontsize=14, color="white", pad=15
         )
         ax.tick_params(colors="white")
@@ -319,7 +319,7 @@ class Evaluator:
 
         lines = [
             "=" * 60,
-            "  DETECTRA — EVALUATION REPORT",
+            "  Deepfakedetection — EVALUATION REPORT",
             "  Step 6: Test Set Evaluation",
             "=" * 60,
             "",

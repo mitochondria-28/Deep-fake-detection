@@ -25,7 +25,7 @@ FRAME_SIZE      = 112   # must match Step 1 output (already 112×112)
 
 class DeepfakeDataset(Dataset):
     """
-    PyTorch Dataset for the Detectra deepfake detection pipeline.
+    PyTorch Dataset for the Deepfakedetection deepfake detection pipeline.
 
     Each item returned is:
         frames : FloatTensor of shape (SEQUENCE_LENGTH, 3, 112, 112)

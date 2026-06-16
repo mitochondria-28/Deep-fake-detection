@@ -1,6 +1,5 @@
 # Deepfake Detection System
 
-
 > Hybrid ResNeXt50 + LSTM architecture for binary deepfake video classification
 
 ---
@@ -30,7 +29,7 @@
 
 ## Overview
 
-Detectra is a deepfake video detection system that classifies videos as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload any video and receive a prediction with a confidence score.
+Deepfakedetection is a deepfake video detection system that classifies videos as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload any video and receive a prediction with a confidence score.
 
 ---
 
@@ -73,26 +72,26 @@ Input Video
 
 ## Tech Stack
 
-| Component | Technology |
-|---|---|
-| Deep Learning | PyTorch 1.9+ |
-| CNN Backbone | ResNeXt50-32x4d (torchvision) |
-| Face Detection | MTCNN (facenet-pytorch) |
-| Video Processing | OpenCV 4.5+ |
-| Image Processing | Pillow, NumPy |
-| Data Splitting | scikit-learn |
-| Web Framework | Django 3.2+ |
-| Database (dev) | SQLite |
-| Database (prod) | PostgreSQL |
-| Production Server | Gunicorn + WhiteNoise |
-| Language | Python 3.9 |
+| Component         | Technology                    |
+| ----------------- | ----------------------------- |
+| Deep Learning     | PyTorch 1.9+                  |
+| CNN Backbone      | ResNeXt50-32x4d (torchvision) |
+| Face Detection    | MTCNN (facenet-pytorch)       |
+| Video Processing  | OpenCV 4.5+                   |
+| Image Processing  | Pillow, NumPy                 |
+| Data Splitting    | scikit-learn                  |
+| Web Framework     | Django 3.2+                   |
+| Database (dev)    | SQLite                        |
+| Database (prod)   | PostgreSQL                    |
+| Production Server | Gunicorn + WhiteNoise         |
+| Language          | Python 3.9                    |
 
 ---
 
 ## Project Structure
 
 ```
-detectra/
+Deepfakedetection/
 ├── data/
 │   ├── final_dataset/
 │   │   ├── Real/              ← raw real videos
@@ -117,7 +116,7 @@ detectra/
 │   ├── __init__.py
 │   ├── resnext.py             ← Part A: ResNeXt50 feature extractor
 │   ├── lstm.py                ← Part B: LSTM classifier
-│   ├── detectra.py            ← Combined hybrid model
+│   ├── Deepfakedetection.py            ← Combined hybrid model
 │   └── verify_model.py        ← Architecture verification
 ├── training/
 │   ├── __init__.py
@@ -175,12 +174,12 @@ detectra/
 
 ## Dataset
 
-| Source | Real | Fake | Total |
-|---|---|---|---|
-| DFDC | 1500 | 1500 | 3000 |
-| FaceForensics++ | 1000 | 1000 | 2000 |
-| Celeb-DF v2 | 500 | 500 | 1000 |
-| **Total** | **3000** | **3000** | **6000** |
+| Source          | Real     | Fake     | Total    |
+| --------------- | -------- | -------- | -------- |
+| DFDC            | 1500     | 1500     | 3000     |
+| FaceForensics++ | 1000     | 1000     | 2000     |
+| Celeb-DF v2     | 500      | 500      | 1000     |
+| **Total**       | **3000** | **3000** | **6000** |
 
 > **Note:** Audio-altered DFDC videos must be removed before training using `filter_dfdc.py`.  
 > The dataset is balanced 50/50 Real/Fake. If your available dataset is imbalanced, `split.py` automatically trims the majority class to match the minority class.
@@ -202,8 +201,8 @@ detectra/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/detectra.git
-cd detectra
+git clone https://github.com/YOUR_USERNAME/Deepfakedetection.git
+cd Deepfakedetection
 ```
 
 ### 2. Create and activate a virtual environment (recommended)
@@ -220,6 +219,7 @@ pip install -r requirements.txt
 ```
 
 **requirements.txt contents:**
+
 ```
 torch>=1.9.0
 torchvision>=0.10.0
@@ -244,6 +244,7 @@ mkdir -p checkpoints results logs
 ### 5. Place your dataset
 
 Copy your raw videos into:
+
 ```
 data/final_dataset/Real/    ← all real videos (.mp4, .avi, .mov)
 data/final_dataset/Fake/    ← all fake videos (.mp4, .avi, .mov)
@@ -262,6 +263,7 @@ Run each step in order. Do not skip steps.
 Extracts face regions from every video using MTCNN and saves face-only videos at 30 FPS.
 
 **What it does:**
+
 - Extracts up to 150 frames per video using OpenCV
 - Detects faces in each frame using MTCNN
 - Discards frames with no detected face
@@ -269,16 +271,19 @@ Extracts face regions from every video using MTCNN and saves face-only videos at
 - Saves face-only videos to `data/processed/Real/` and `data/processed/Fake/`
 
 **If using DFDC dataset, filter audio-altered videos first:**
+
 ```bash
 python3 -m preprocessing.filter_dfdc
 ```
 
 **Run preprocessing:**
+
 ```bash
 python3 -m preprocessing.preprocess
 ```
 
 **Expected output:**
+
 ```
 [INFO] Device: mps
 [INFO] Found 108 videos in data/final_dataset/Real → label=Real
@@ -292,6 +297,7 @@ python3 -m preprocessing.preprocess
 > Processing time: ~38 seconds per video on M1 CPU. For 1699 videos expect ~18 hours. Run overnight or in background with `nohup`.
 
 **Verify output:**
+
 ```bash
 python3 - <<'EOF'
 from pathlib import Path
@@ -308,6 +314,7 @@ EOF
 Splits processed videos into 70% train / 30% test with stratified 50/50 class balance.
 
 **What it does:**
+
 - Automatically balances dataset by trimming majority class to minority class size
 - Applies stratified shuffle split (random_state=42 for reproducibility)
 - Saves `data/splits/train.csv` and `data/splits/test.csv`
@@ -317,11 +324,13 @@ python3 -m preprocessing.split
 ```
 
 **Verify the split:**
+
 ```bash
 python3 -m preprocessing.verify_split
 ```
 
 **Expected output:**
+
 ```
 [INFO] After balancing  → Real: 108 | Fake: 108
 [INFO] Total balanced dataset size: 216
@@ -338,6 +347,7 @@ python3 -m preprocessing.verify_split
 Builds PyTorch DataLoaders and verifies tensor shapes.
 
 **Configuration:**
+
 - Batch size: 4
 - Sequence length: 20 frames per video
 - Frame size: 112×112
@@ -349,6 +359,7 @@ python3 -m dataloader.loader
 ```
 
 **Expected output — all checks must show ✓:**
+
 ```
 Train loader: 151 samples | 37 batches | batch_size=4
 Test loader:  65 samples  | 17 batches | batch_size=4
@@ -368,23 +379,24 @@ Builds and verifies the hybrid ResNeXt50 + LSTM model.
 
 **Architecture:**
 
-| Component | Detail |
-|---|---|
-| Feature extractor | pretrained resnext50_32x4d |
-| Frozen layers | conv1, bn1, layer1, layer2, layer3 |
-| Fine-tuned layers | layer4 + extra head (2 FC layers) |
-| Feature output | 2048-d vector per frame |
-| LSTM | 1 layer, hidden=2048, dropout=0.4 |
-| Activation | Leaky ReLU (negative_slope=0.01) |
-| Pooling | Adaptive Average Pool across sequence |
-| Classifier | Linear(2048, 2) |
-| Inference output | Softmax → P(Real), P(Fake) |
+| Component         | Detail                                |
+| ----------------- | ------------------------------------- |
+| Feature extractor | pretrained resnext50_32x4d            |
+| Frozen layers     | conv1, bn1, layer1, layer2, layer3    |
+| Fine-tuned layers | layer4 + extra head (2 FC layers)     |
+| Feature output    | 2048-d vector per frame               |
+| LSTM              | 1 layer, hidden=2048, dropout=0.4     |
+| Activation        | Leaky ReLU (negative_slope=0.01)      |
+| Pooling           | Adaptive Average Pool across sequence |
+| Classifier        | Linear(2048, 2)                       |
+| Inference output  | Softmax → P(Real), P(Fake)            |
 
 ```bash
 python3 -m model.verify_model
 ```
 
 **Expected output — all must show ✓:**
+
 ```
   conv1 / bn1 (stem)             ✓ FROZEN
   layer1                         ✓ FROZEN
@@ -405,40 +417,45 @@ Trains the model and saves checkpoints.
 
 **Configuration:**
 
-| Parameter | Value |
-|---|---|
-| Loss function | CrossEntropyLoss |
-| Optimizer | Adam |
-| Learning rate | 1e-5 |
-| Weight decay | 1e-5 |
-| Batch size | 4 |
-| Gradient accumulation | 4 steps (effective batch = 16) |
-| Epochs | 20 |
-| LR scheduler | ReduceLROnPlateau (patience=3, factor=0.5) |
-| Gradient clipping | max_norm=1.0 |
+| Parameter             | Value                                      |
+| --------------------- | ------------------------------------------ |
+| Loss function         | CrossEntropyLoss                           |
+| Optimizer             | Adam                                       |
+| Learning rate         | 1e-5                                       |
+| Weight decay          | 1e-5                                       |
+| Batch size            | 4                                          |
+| Gradient accumulation | 4 steps (effective batch = 16)             |
+| Epochs                | 20                                         |
+| LR scheduler          | ReduceLROnPlateau (patience=3, factor=0.5) |
+| Gradient clipping     | max_norm=1.0                               |
 
 **Run training** (recommended: background process):
+
 ```bash
 nohup python3 -m training.train > logs/training_stdout.log 2>&1 &
 tail -f logs/training_stdout.log
 ```
 
 **Monitor progress:**
+
 ```bash
 tail -f logs/training.log
 ```
 
 **Expected training time:**
+
 - ~40 seconds per epoch on Apple Silicon MPS
 - ~10–15 minutes per epoch on CPU only
 
 **Checkpoints saved to:**
+
 ```
 checkpoints/best_loss.pt   ← lowest validation loss
 checkpoints/best_acc.pt    ← highest validation accuracy
 ```
 
 **Verify checkpoints after training:**
+
 ```bash
 python3 - <<'EOF'
 import torch
@@ -465,16 +482,17 @@ python3 -m evaluation.evaluate
 
 **Metrics computed:**
 
-| Metric | Formula |
-|---|---|
-| Accuracy | (TP+TN) / (TP+TN+FP+FN) |
-| Recall | TP / (TP+FN) |
-| Specificity | TN / (TN+FP) |
-| Precision | TP / (TP+FP) |
-| F1-Score | 2×(Precision×Recall) / (Precision+Recall) |
-| AUC-ROC | Area under ROC curve |
+| Metric      | Formula                                   |
+| ----------- | ----------------------------------------- |
+| Accuracy    | (TP+TN) / (TP+TN+FP+FN)                   |
+| Recall      | TP / (TP+FN)                              |
+| Specificity | TN / (TN+FP)                              |
+| Precision   | TP / (TP+FP)                              |
+| F1-Score    | 2×(Precision×Recall) / (Precision+Recall) |
+| AUC-ROC     | Area under ROC curve                      |
 
 **Results saved to:**
+
 ```
 results/confusion_matrix.png    ← heatmap with TP/TN/FP/FN
 results/roc_curve.png           ← AUC-ROC curve plot
@@ -483,11 +501,11 @@ results/evaluation_report.txt   ← full metrics text report
 
 **Results achieved on development dataset (216 balanced videos):**
 
-| Metric | Value |
-|---|---|
-| Validation Accuracy | 90.77% |
-| Best Epoch | 19 / 20 |
-| Best Val Loss | 0.3228 |
+| Metric              | Value   |
+| ------------------- | ------- |
+| Validation Accuracy | 90.77%  |
+| Best Epoch          | 19 / 20 |
+| Best Val Loss       | 0.3228  |
 
 > Target accuracy of 93.59% is achievable with the full 6000-video dataset. The reduced dataset was used for development due to hardware constraints.
 
@@ -507,7 +525,7 @@ pip install -r requirements_web.txt
 ```bash
 cat > .env << 'EOF'
 DJANGO_ENV=development
-SECRET_KEY=detectra-local-dev-key-not-for-production
+SECRET_KEY=Deepfakedetection-local-dev-key-not-for-production
 DEBUG=True
 CHECKPOINT_PATH=../checkpoints/best_acc.pt
 EOF
@@ -536,13 +554,14 @@ Open your browser at: **http://127.0.0.1:8000**
 
 #### Web app features
 
-| Page | URL | Description |
-|---|---|---|
-| Upload | `/` | Drag and drop video upload |
-| Result | `/result/<id>/` | Prediction with confidence score and face grid |
-| History | `/history/` | All past predictions from database |
+| Page    | URL             | Description                                    |
+| ------- | --------------- | ---------------------------------------------- |
+| Upload  | `/`             | Drag and drop video upload                     |
+| Result  | `/result/<id>/` | Prediction with confidence score and face grid |
+| History | `/history/`     | All past predictions from database             |
 
 **Inference pipeline per uploaded video:**
+
 1. File validated (format + size) before saving to disk
 2. Frames extracted with OpenCV (up to 150)
 3. MTCNN detects and crops face regions
@@ -567,25 +586,28 @@ Everything in Step 7 runs on SQLite automatically with `DJANGO_ENV=development`.
 #### Production (PostgreSQL + Gunicorn)
 
 **Set up PostgreSQL:**
+
 ```bash
 psql postgres
 ```
+
 ```sql
-CREATE DATABASE detectra_db;
-CREATE USER detectra_user WITH PASSWORD 'your-password';
-GRANT ALL PRIVILEGES ON DATABASE detectra_db TO detectra_user;
-ALTER DATABASE detectra_db OWNER TO detectra_user;
+CREATE DATABASE Deepfakedetection_db;
+CREATE USER Deepfakedetection_user WITH PASSWORD 'your-password';
+GRANT ALL PRIVILEGES ON DATABASE Deepfakedetection_db TO Deepfakedetection_user;
+ALTER DATABASE Deepfakedetection_db OWNER TO Deepfakedetection_user;
 \q
 ```
 
 **Update `.env` for production:**
+
 ```bash
 DJANGO_ENV=production
 SECRET_KEY=your-strong-random-secret-key
 DEBUG=False
 CHECKPOINT_PATH=../checkpoints/best_acc.pt
-DB_NAME=detectra_db
-DB_USER=detectra_user
+DB_NAME=Deepfakedetection_db
+DB_USER=Deepfakedetection_user
 DB_PASSWORD=your-password
 DB_HOST=localhost
 DB_PORT=5432
@@ -593,6 +615,7 @@ ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 ```
 
 **Run migrations and start Gunicorn:**
+
 ```bash
 DJANGO_SETTINGS_MODULE=webapp.settings.production python3 manage.py migrate
 DJANGO_SETTINGS_MODULE=webapp.settings.production python3 manage.py collectstatic --noinput
@@ -607,49 +630,56 @@ DJANGO_SETTINGS_MODULE=webapp.settings.production gunicorn --config gunicorn.con
 
 ### Training curve (20 epochs, 216 balanced videos)
 
-| Epoch | Train Loss | Train Acc | Val Loss | Val Acc |
-|---|---|---|---|---|
-| 1 | 0.6850 | 60.81% | 0.6733 | 67.69% |
-| 5 | 0.5917 | 70.95% | 0.6127 | 63.08% |
-| 10 | 0.3493 | 85.14% | 0.4248 | 81.54% |
-| 16 | 0.1973 | 93.24% | 0.3228 | 87.69% ← best loss |
-| 19 | 0.3298 | 85.81% | 0.3229 | **90.77%** ← best acc |
-| 20 | 0.2087 | 91.22% | 0.3439 | 89.23% |
+| Epoch | Train Loss | Train Acc | Val Loss | Val Acc               |
+| ----- | ---------- | --------- | -------- | --------------------- |
+| 1     | 0.6850     | 60.81%    | 0.6733   | 67.69%                |
+| 5     | 0.5917     | 70.95%    | 0.6127   | 63.08%                |
+| 10    | 0.3493     | 85.14%    | 0.4248   | 81.54%                |
+| 16    | 0.1973     | 93.24%    | 0.3228   | 87.69% ← best loss    |
+| 19    | 0.3298     | 85.81%    | 0.3229   | **90.77%** ← best acc |
+| 20    | 0.2087     | 91.22%    | 0.3439   | 89.23%                |
 
 ### Final metrics (test set, best_acc.pt checkpoint)
 
-| Metric | Value |
-|---|---|
-| **Accuracy** | **90.77%** |
-| Best Val Loss | 0.3228 |
-| Checkpoint | epoch 19 |
+| Metric        | Value      |
+| ------------- | ---------- |
+| **Accuracy**  | **90.77%** |
+| Best Val Loss | 0.3228     |
+| Checkpoint    | epoch 19   |
 
 ---
 
 ## Troubleshooting
 
 ### `No installed app with label 'detector'`
+
 ```bash
 # Make sure you are in the webapp directory and settings module is set
-cd detectra/webapp
+cd Deepfakedetection/webapp
 DJANGO_SETTINGS_MODULE=webapp.settings.development python3 manage.py migrate
 ```
 
 ### `TypeError: __init__() got an unexpected keyword argument 'verbose'`
+
 Remove `verbose=True` from `ReduceLROnPlateau` in `training/trainer.py`. This parameter was removed in PyTorch 2.x.
 
 ### `RuntimeError: PytorchStreamWriter failed writing file`
+
 Disk is full. Free at least 500MB before training. Move raw dataset files to external storage — they are not needed after preprocessing completes.
 
 ### `Bootstrap failed: 5: Input/output error` (PostgreSQL)
+
 ```bash
 rm -f /opt/homebrew/var/postgresql@14/postmaster.pid
 brew services restart postgresql@14
 ```
+
 If PostgreSQL continues to fail, use SQLite (`DJANGO_ENV=development`) for development — it is fully sufficient for a FYP demo.
 
 ### MTCNN detects very few faces in Real videos
+
 Your `SOURCE_MAP` paths in `preprocess.py` don't match your actual folder structure. Run:
+
 ```bash
 python3 - <<'EOF'
 from pathlib import Path
@@ -659,12 +689,15 @@ for p in sorted(Path("data/raw").rglob("*")):
         print(f"{p}  ({len(vids)} videos)")
 EOF
 ```
+
 Then update `SOURCE_MAP` in `preprocessing/preprocess.py` to match your actual paths.
 
 ### `Apple Silicon MPS detected` but training is slow
+
 This is expected — MPS acceleration is active. Each epoch takes ~40 seconds on M1 Air with 216 videos. For the full 6000-video dataset, use a cloud GPU (Railway, Render, or Google Colab for training only).
 
 ### VS Code CSS linter warning on Django template variables
+
 This is a false alarm — VS Code's CSS linter does not understand Django template syntax. The fix is to use `data-width` attributes and set widths via JavaScript instead of inline `style="{{ value }}"`. See `history.html` for the implemented fix.
 
 ---

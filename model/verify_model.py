@@ -1,6 +1,6 @@
 # model/verify_model.py
 """
-Verifies the full Detectra model architecture:
+Verifies the full Deepfakedetection model architecture:
   - Prints layer-by-layer parameter counts
   - Confirms trainable vs frozen split
   - Runs a full forward pass with dummy data matching DataLoader output shape
@@ -8,7 +8,7 @@ Verifies the full Detectra model architecture:
 """
 
 import torch
-from model.detectra import Detectra
+from model.deepfakedetection import Deepfakedetection
 
 SEQUENCE_LENGTH = 20    # must match dataloader/dataset.py
 BATCH_SIZE      = 4
@@ -24,8 +24,8 @@ def verify_architecture() -> None:
     print(f"\n  Device: {device}")
 
     # ── Build model ───────────────────────────────────────────────────────────
-    print("\n  Building Detectra (pretrained=True)...")
-    model = Detectra(pretrained=True).to(device)
+    print("\n  Building Deepfakedetection (pretrained=True)...")
+    model = Deepfakedetection(pretrained=True).to(device)
     model.eval()
 
     # ── Parameter summary ─────────────────────────────────────────────────────

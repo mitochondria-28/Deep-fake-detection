@@ -1,8 +1,6 @@
 <!-- webapp/detector/templates/detector/result.html -->
-{% extends "detector/base.html" %}
-{% block title %}Detectra — Result{% endblock %}
-
-{% block content %}
+{% extends "detector/base.html" %} {% block title %}Deepfakedetection — Result{%
+endblock %} {% block content %}
 <style>
   .verdict {
     text-align: center;
@@ -12,31 +10,46 @@
     border: 2px solid;
   }
   .verdict.REAL {
-    background: rgba(0,255,140,0.07);
+    background: rgba(0, 255, 140, 0.07);
     border-color: #00ff8c;
   }
   .verdict.FAKE {
-    background: rgba(255,60,60,0.09);
+    background: rgba(255, 60, 60, 0.09);
     border-color: #ff3c3c;
   }
   .verdict.UNCERTAIN {
-    background: rgba(255,200,0,0.07);
+    background: rgba(255, 200, 0, 0.07);
     border-color: #ffc800;
   }
 
-  .verdict-icon  { font-size: 3.5rem; margin-bottom: 10px; }
+  .verdict-icon {
+    font-size: 3.5rem;
+    margin-bottom: 10px;
+  }
   .verdict-label {
     font-size: 2.4rem;
     font-weight: 900;
     letter-spacing: 4px;
     margin-bottom: 6px;
   }
-  .REAL     .verdict-label { color: #00ff8c; }
-  .FAKE     .verdict-label { color: #ff5555; }
-  .UNCERTAIN .verdict-label { color: #ffc800; }
+  .REAL .verdict-label {
+    color: #00ff8c;
+  }
+  .FAKE .verdict-label {
+    color: #ff5555;
+  }
+  .UNCERTAIN .verdict-label {
+    color: #ffc800;
+  }
 
-  .verdict-conf { font-size: 1rem; color: #aaaacc; }
-  .verdict-conf span { color: #fff; font-weight: 700; }
+  .verdict-conf {
+    font-size: 1rem;
+    color: #aaaacc;
+  }
+  .verdict-conf span {
+    color: #fff;
+    font-weight: 700;
+  }
 
   .prob-row {
     display: flex;
@@ -51,12 +64,25 @@
     text-align: center;
     border: 1px solid #22224a;
   }
-  .prob-card .label { font-size: 0.8rem; color: #8888aa; margin-bottom: 8px; }
-  .prob-card .value { font-size: 1.9rem; font-weight: 800; }
-  .prob-card.real .value { color: #00ff8c; }
-  .prob-card.fake .value { color: #ff5555; }
+  .prob-card .label {
+    font-size: 0.8rem;
+    color: #8888aa;
+    margin-bottom: 8px;
+  }
+  .prob-card .value {
+    font-size: 1.9rem;
+    font-weight: 800;
+  }
+  .prob-card.real .value {
+    color: #00ff8c;
+  }
+  .prob-card.fake .value {
+    color: #ff5555;
+  }
 
-  .bar-wrap { margin-bottom: 28px; }
+  .bar-wrap {
+    margin-bottom: 28px;
+  }
   .bar-label {
     display: flex;
     justify-content: space-between;
@@ -75,8 +101,12 @@
     border-radius: 99px;
     transition: width 1s ease;
   }
-  .bar-fill.real { background: linear-gradient(90deg, #00cc6a, #00ff8c); }
-  .bar-fill.fake { background: linear-gradient(90deg, #cc2200, #ff5555); }
+  .bar-fill.real {
+    background: linear-gradient(90deg, #00cc6a, #00ff8c);
+  }
+  .bar-fill.fake {
+    background: linear-gradient(90deg, #cc2200, #ff5555);
+  }
 
   .section-title {
     font-size: 0.8rem;
@@ -99,8 +129,16 @@
     padding: 14px 18px;
     border: 1px solid #1e1e3e;
   }
-  .meta-item .k { font-size: 0.75rem; color: #666688; margin-bottom: 4px; }
-  .meta-item .v { font-size: 0.95rem; color: #cccce8; font-weight: 600; }
+  .meta-item .k {
+    font-size: 0.75rem;
+    color: #666688;
+    margin-bottom: 4px;
+  }
+  .meta-item .v {
+    font-size: 0.95rem;
+    color: #cccce8;
+    font-weight: 600;
+  }
 
   .face-grid-wrap {
     background: #0a0a1e;
@@ -122,7 +160,7 @@
   }
 
   .uncertain-note {
-    background: rgba(255,200,0,0.08);
+    background: rgba(255, 200, 0, 0.08);
     border: 1px solid #7a6000;
     border-radius: 10px;
     padding: 14px 18px;
@@ -145,23 +183,20 @@
     font-size: 0.95rem;
     transition: background 0.2s;
   }
-  .btn-back:hover { background: #1a1a40; }
+  .btn-back:hover {
+    background: #1a1a40;
+  }
 </style>
 
 <div class="card">
-
   <!-- ── Verdict banner ── -->
   <div class="verdict {{ label }}">
     <div class="verdict-icon">
-      {% if label == "REAL" %}✅
-      {% elif label == "FAKE" %}🚫
-      {% else %}⚠️
-      {% endif %}
+      {% if label == "REAL" %}✅ {% elif label == "FAKE" %}🚫 {% else %}⚠️ {%
+      endif %}
     </div>
     <div class="verdict-label">{{ label }}</div>
-    <div class="verdict-conf">
-      Confidence: <span>{{ confidence }}%</span>
-    </div>
+    <div class="verdict-conf">Confidence: <span>{{ confidence }}%</span></div>
   </div>
 
   {% if label == "UNCERTAIN" %}
@@ -189,13 +224,13 @@
   <div class="bar-wrap">
     <div class="bar-label"><span>Real</span><span>{{ real_prob }}%</span></div>
     <div class="bar-track">
-      <div class="bar-fill real" id="bar-real" style="width:0%"></div>
+      <div class="bar-fill real" id="bar-real" style="width: 0%"></div>
     </div>
   </div>
   <div class="bar-wrap">
     <div class="bar-label"><span>Fake</span><span>{{ fake_prob }}%</span></div>
     <div class="bar-track">
-      <div class="bar-fill fake" id="bar-fake" style="width:0%"></div>
+      <div class="bar-fill fake" id="bar-fake" style="width: 0%"></div>
     </div>
   </div>
 
@@ -203,10 +238,10 @@
   {% if face_grid_url %}
   <div class="section-title">Analyzed Facial Regions</div>
   <div class="face-grid-wrap">
-    <img src="{{ face_grid_url }}" alt="Detected face regions">
+    <img src="{{ face_grid_url }}" alt="Detected face regions" />
     <div class="face-grid-caption">
-      Green boxes show detected face regions analyzed by MTCNN.
-      {{ frames_analyzed }} frames with faces were passed to the model.
+      Green boxes show detected face regions analyzed by MTCNN. {{
+      frames_analyzed }} frames with faces were passed to the model.
     </div>
   </div>
   {% endif %}

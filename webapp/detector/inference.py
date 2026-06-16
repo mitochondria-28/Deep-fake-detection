@@ -1,6 +1,6 @@
 # webapp/detector/inference.py
 """
-Detectra Inference Engine for Django
+Deepfakedetection Inference Engine for Django
 
 Handles:
   - Model + MTCNN loading (called once at startup by apps.py)
@@ -34,7 +34,7 @@ _device = None
 
 def load_models() -> None:
     """
-    Load Detectra model and MTCNN detector into module-level globals.
+    Load Deepfakedetection model and MTCNN detector into module-level globals.
     Called once by detector/apps.py at Django startup.
     """
     global _model, _mtcnn, _device
@@ -50,7 +50,7 @@ def load_models() -> None:
         _device = torch.device("cpu")
     logger.info(f"Inference device: {_device}")
 
-    # ── Detectra model ────────────────────────────────────────────────────────
+    # ── Deepfakedetection model ────────────────────────────────────────────────────────
     checkpoint_path = settings.CHECKPOINT_PATH
     if not Path(checkpoint_path).exists():
         raise FileNotFoundError(
@@ -58,12 +58,12 @@ def load_models() -> None:
             f"Complete Step 5 training before starting the web app."
         )
 
-    # Add detectra root to path so model package is importable
-    detectra_root = str(Path(checkpoint_path).parent.parent)
-    if detectra_root not in sys.path:
-        sys.path.insert(0, detectra_root)
+    # Add Deepfakedetection root to path so model package is importable
+    Deepfakedetection_root = str(Path(checkpoint_path).parent.parent)
+    if Deepfakedetection_root not in sys.path:
+        sys.path.insert(0, Deepfakedetection_root)
 
-    from model.detectra import Detectra
+    from model.deepfakedetection import Deepfakedetection
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     state_dict = checkpoint["model_state"]
@@ -76,13 +76,13 @@ def load_models() -> None:
             for k, v in state_dict.items()
         }
 
-    model = Detectra(pretrained=False)
+    model = Deepfakedetection(pretrained=False)
     model.load_state_dict(state_dict)
     model = model.to(_device)
     model.eval()
     _model = model
     logger.info(
-        f"Detectra loaded — epoch {checkpoint.get('epoch', '?')} | "
+        f"Deepfakedetection loaded — epoch {checkpoint.get('epoch', '?')} | "
         f"val_acc={checkpoint.get('val_acc', 0):.2f}%"
     )
 

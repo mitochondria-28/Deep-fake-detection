@@ -22,7 +22,7 @@ errorlog   = "logs/gunicorn_error.log"
 loglevel   = "info"
 
 # ── Process naming ────────────────────────────────────────────────────────────
-proc_name  = "detectra"
+proc_name  = "Deepfakedetection"
 
 # ── Preload app (load model once, fork to workers) ────────────────────────────
 # This means the model is loaded ONCE in the master process,

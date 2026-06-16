@@ -1,8 +1,6 @@
 <!-- webapp/detector/templates/detector/history.html -->
-{% extends "detector/base.html" %}
-{% block title %}Detectra — Prediction History{% endblock %}
-
-{% block content %}
+{% extends "detector/base.html" %} {% block title %}Deepfakedetection —
+Prediction History{% endblock %} {% block content %}
 <style>
   .stats-row {
     display: grid;
@@ -48,7 +46,9 @@
     color: #cccce8;
     vertical-align: middle;
   }
-  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
   .badge {
     display: inline-block;
     padding: 3px 10px;
@@ -57,9 +57,18 @@
     font-weight: 700;
     letter-spacing: 1px;
   }
-  .badge-REAL      { background: rgba(0,255,140,0.12); color: #00ff8c; }
-  .badge-FAKE      { background: rgba(255,60,60,0.12);  color: #ff5555; }
-  .badge-UNCERTAIN { background: rgba(255,200,0,0.12);  color: #ffc800; }
+  .badge-REAL {
+    background: rgba(0, 255, 140, 0.12);
+    color: #00ff8c;
+  }
+  .badge-FAKE {
+    background: rgba(255, 60, 60, 0.12);
+    color: #ff5555;
+  }
+  .badge-UNCERTAIN {
+    background: rgba(255, 200, 0, 0.12);
+    color: #ffc800;
+  }
   .conf-bar {
     height: 6px;
     background: #1e1e3e;
@@ -81,7 +90,9 @@
     text-decoration: none;
     font-size: 0.8rem;
   }
-  a.view-link:hover { text-decoration: underline; }
+  a.view-link:hover {
+    text-decoration: underline;
+  }
   .empty-state {
     text-align: center;
     padding: 48px;
@@ -100,15 +111,15 @@
       <div class="lbl">Total Analyzed</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color:#00ff8c">{{ counts.real }}</div>
+      <div class="num" style="color: #00ff8c">{{ counts.real }}</div>
       <div class="lbl">Classified Real</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color:#ff5555">{{ counts.fake }}</div>
+      <div class="num" style="color: #ff5555">{{ counts.fake }}</div>
       <div class="lbl">Classified Fake</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color:#ffc800">{{ counts.uncertain }}</div>
+      <div class="num" style="color: #ffc800">{{ counts.uncertain }}</div>
       <div class="lbl">Uncertain</div>
     </div>
   </div>
@@ -131,9 +142,15 @@
     <tbody>
       {% for r in records %}
       <tr>
-        <td style="color:#555577">{{ r.pk }}</td>
-        <td style="max-width:180px;overflow:hidden;
-                   text-overflow:ellipsis;white-space:nowrap">
+        <td style="color: #555577">{{ r.pk }}</td>
+        <td
+          style="
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          "
+        >
           {{ r.filename }}
         </td>
         <td>
@@ -147,12 +164,13 @@
         </td>
         <td>{{ r.frames_analyzed }}</td>
         <td>{{ r.processing_time|floatformat:1 }}s</td>
-        <td style="color:#666688;font-size:0.8rem">
+        <td style="color: #666688; font-size: 0.8rem">
           {{ r.created_at|date:"M d, H:i" }}
         </td>
         <td>
-          <a class="view-link"
-             href="{% url 'detector:result' r.pk %}">View →</a>
+          <a class="view-link" href="{% url 'detector:result' r.pk %}"
+            >View →</a
+          >
         </td>
       </tr>
       {% endfor %}
@@ -161,7 +179,7 @@
   {% else %}
   <div class="empty-state">
     No predictions yet.
-    <a href="/" style="color:#00d4ff">Upload a video</a> to get started.
+    <a href="/" style="color: #00d4ff">Upload a video</a> to get started.
   </div>
   {% endif %}
 </div>
@@ -170,7 +188,7 @@
   // Set bar widths from data-width attributes after page load.
   // Avoids Django template expressions inside style attributes
   // which confuse the VS Code CSS linter.
-  document.querySelectorAll(".conf-fill[data-width]").forEach(function(el) {
+  document.querySelectorAll(".conf-fill[data-width]").forEach(function (el) {
     var val = parseFloat(el.getAttribute("data-width"));
     if (!isNaN(val)) {
       el.style.width = Math.min(100, Math.max(0, val)) + "%";

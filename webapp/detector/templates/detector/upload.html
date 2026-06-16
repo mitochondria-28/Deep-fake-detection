@@ -1,8 +1,6 @@
 <!-- webapp/detector/templates/detector/upload.html -->
-{% extends "detector/base.html" %}
-{% block title %}Detectra — Upload Video{% endblock %}
-
-{% block content %}
+{% extends "detector/base.html" %} {% block title %}Deepfakedetection — Upload
+Video{% endblock %} {% block content %}
 <style>
   .drop-zone {
     border: 2px dashed #3a3a7a;
@@ -10,22 +8,37 @@
     padding: 52px 24px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+      border-color 0.2s,
+      background 0.2s;
     position: relative;
   }
-  .drop-zone:hover, .drop-zone.drag-over {
+  .drop-zone:hover,
+  .drop-zone.drag-over {
     border-color: #00d4ff;
-    background: rgba(0,212,255,0.04);
+    background: rgba(0, 212, 255, 0.04);
   }
-  .drop-icon { font-size: 3rem; margin-bottom: 14px; }
-  .drop-label { color: #aaaacc; font-size: 0.95rem; line-height: 1.7; }
-  .drop-label span { color: #00d4ff; font-weight: 600; }
-  #file-input { display: none; }
+  .drop-icon {
+    font-size: 3rem;
+    margin-bottom: 14px;
+  }
+  .drop-label {
+    color: #aaaacc;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+  .drop-label span {
+    color: #00d4ff;
+    font-weight: 600;
+  }
+  #file-input {
+    display: none;
+  }
 
   .file-preview {
     display: none;
     margin-top: 18px;
-    background: rgba(0,212,255,0.07);
+    background: rgba(0, 212, 255, 0.07);
     border: 1px solid #2a4a6a;
     border-radius: 10px;
     padding: 14px 18px;
@@ -34,9 +47,19 @@
     align-items: center;
     gap: 12px;
   }
-  .file-preview.show { display: flex; }
-  .file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .file-size { color: #6688aa; white-space: nowrap; }
+  .file-preview.show {
+    display: flex;
+  }
+  .file-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-size {
+    color: #6688aa;
+    white-space: nowrap;
+  }
 
   .btn-submit {
     margin-top: 28px;
@@ -52,8 +75,13 @@
     cursor: pointer;
     transition: opacity 0.2s;
   }
-  .btn-submit:hover { opacity: 0.88; }
-  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-submit:hover {
+    opacity: 0.88;
+  }
+  .btn-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
   .spinner {
     display: none;
@@ -62,16 +90,23 @@
     color: #8888aa;
     font-size: 0.9rem;
   }
-  .spinner.show { display: block; }
+  .spinner.show {
+    display: block;
+  }
   .spinner-ring {
-    width: 36px; height: 36px;
+    width: 36px;
+    height: 36px;
     border: 3px solid #2a2a5a;
     border-top-color: #00d4ff;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin: 0 auto 12px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 
   .info-grid {
     display: grid;
@@ -86,9 +121,19 @@
     padding: 16px;
     text-align: center;
   }
-  .info-card .ico { font-size: 1.5rem; margin-bottom: 6px; }
-  .info-card .lbl { font-size: 0.75rem; color: #7777aa; }
-  .info-card .val { font-size: 0.85rem; color: #cccce8; font-weight: 600; }
+  .info-card .ico {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+  }
+  .info-card .lbl {
+    font-size: 0.75rem;
+    color: #7777aa;
+  }
+  .info-card .val {
+    font-size: 0.85rem;
+    color: #cccce8;
+    font-weight: 600;
+  }
 </style>
 
 <div class="card">
@@ -96,22 +141,27 @@
   <h2>Analyze any video for deepfake manipulation</h2>
 
   {% if error %}
-    <div class="error-box">⚠ {{ error }}</div>
+  <div class="error-box">⚠ {{ error }}</div>
   {% endif %}
 
   <form method="post" enctype="multipart/form-data" id="upload-form">
     {% csrf_token %}
 
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div
+      class="drop-zone"
+      id="drop-zone"
+      onclick="document.getElementById('file-input').click()"
+    >
       <div class="drop-icon">🎬</div>
       <div class="drop-label">
-        <strong style="color:#fff;">Drag and drop a video file here</strong><br>
-        or <span>click to browse</span><br><br>
+        <strong style="color: #fff">Drag and drop a video file here</strong
+        ><br />
+        or <span>click to browse</span><br /><br />
         Supported formats: MP4, AVI, MOV, MKV &nbsp;·&nbsp; Max 100MB
       </div>
     </div>
 
-    <input type="file" id="file-input" name="video" accept="video/*">
+    <input type="file" id="file-input" name="video" accept="video/*" />
 
     <div class="file-preview" id="file-preview">
       <span>📹</span>
@@ -126,8 +176,10 @@
 
   <div class="spinner" id="spinner">
     <div class="spinner-ring"></div>
-    Processing video — extracting faces and running inference…<br>
-    <small style="color:#555577;">This may take 20–60 seconds depending on video length</small>
+    Processing video — extracting faces and running inference…<br />
+    <small style="color: #555577"
+      >This may take 20–60 seconds depending on video length</small
+    >
   </div>
 
   <div class="info-grid">
@@ -150,14 +202,14 @@
 </div>
 
 <script>
-  const dropZone   = document.getElementById("drop-zone");
-  const fileInput  = document.getElementById("file-input");
-  const preview    = document.getElementById("file-preview");
-  const fileName   = document.getElementById("file-name");
-  const fileSize   = document.getElementById("file-size");
-  const submitBtn  = document.getElementById("submit-btn");
-  const spinner    = document.getElementById("spinner");
-  const form       = document.getElementById("upload-form");
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const preview = document.getElementById("file-preview");
+  const fileName = document.getElementById("file-name");
+  const fileSize = document.getElementById("file-size");
+  const submitBtn = document.getElementById("submit-btn");
+  const spinner = document.getElementById("spinner");
+  const form = document.getElementById("upload-form");
 
   function formatBytes(b) {
     if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
@@ -174,17 +226,21 @@
 
   fileInput.addEventListener("change", () => showFile(fileInput.files[0]));
 
-  dropZone.addEventListener("dragover", e => {
-    e.preventDefault(); dropZone.classList.add("drag-over");
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("drag-over");
   });
   dropZone.addEventListener("dragleave", () => {
     dropZone.classList.remove("drag-over");
   });
-  dropZone.addEventListener("drop", e => {
+  dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
     dropZone.classList.remove("drag-over");
     const file = e.dataTransfer.files[0];
-    if (file) { fileInput.files = e.dataTransfer.files; showFile(file); }
+    if (file) {
+      fileInput.files = e.dataTransfer.files;
+      showFile(file);
+    }
   });
 
   form.addEventListener("submit", () => {

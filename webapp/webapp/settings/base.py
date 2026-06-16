@@ -13,11 +13,11 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
 BASE_DIR      = Path(__file__).resolve().parent.parent.parent
-DETECTRA_ROOT = BASE_DIR.parent
+Deepfakedetection_ROOT = BASE_DIR.parent
 
-# Add detectra root so we can import model/, dataloader/, preprocessing/
-if str(DETECTRA_ROOT) not in sys.path:
-    sys.path.insert(0, str(DETECTRA_ROOT))
+# Add Deepfakedetection root so we can import model/, dataloader/, preprocessing/
+if str(Deepfakedetection_ROOT) not in sys.path:
+    sys.path.insert(0, str(Deepfakedetection_ROOT))
 
 # ── Security ──────────────────────────────────────────────────────────────────
 SECRET_KEY = os.environ.get(
@@ -81,7 +81,7 @@ MAX_UPLOAD_SIZE_MB   = 100
 ALLOWED_VIDEO_EXTS   = {".mp4", ".avi", ".mov", ".mkv"}
 CHECKPOINT_PATH      = os.environ.get(
     "CHECKPOINT_PATH",
-    str(DETECTRA_ROOT / "checkpoints" / "best_acc.pt")
+    str(Deepfakedetection_ROOT / "checkpoints" / "best_acc.pt")
 )
 CONFIDENCE_THRESHOLD = 0.75
 SEQUENCE_LENGTH      = 20
