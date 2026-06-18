@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "detector",
 ]
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",   # serve static files
