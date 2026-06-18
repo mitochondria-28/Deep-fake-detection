@@ -1,6 +1,6 @@
 # evaluation/evaluate.py
 """
-Deepfakedetection — Step 6 Evaluation Entry Point
+Detectra — Step 6 Evaluation Entry Point
 
 Run:
     python3 -m evaluation.evaluate

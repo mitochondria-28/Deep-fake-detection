@@ -1,6 +1,6 @@
 # dataloader/loader.py
 """
-DataLoader factory for Deepfakedetection.
+DataLoader factory for Detectra.
 Call get_dataloaders() to get ready-to-use train and test loaders.
 Run this file directly to smoke-test the full loading pipeline.
 """

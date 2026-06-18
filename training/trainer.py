@@ -1,6 +1,6 @@
 # training/trainer.py
 """
-Deepfakedetection Training Engine — Step 5
+Detectra Training Engine — Step 5
 
 Handles:
   - One full training epoch (forward, backward, optimizer step)
@@ -17,14 +17,14 @@ import torch.nn as nn
 from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.optim import Adam
-from model.deepfakedetection import Deepfakedetection
+from model.Detectra import Detectra
 
 logger = logging.getLogger(__name__)
 
 
 class Trainer:
     """
-    Encapsulates the full training lifecycle for Deepfakedetection.
+    Encapsulates the full training lifecycle for Detectra.
 
     Usage:
         trainer = Trainer(model, train_loader, test_loader, config)
@@ -33,7 +33,7 @@ class Trainer:
 
     def __init__(
         self,
-        model:           Deepfakedetection,
+        model:           Detectra,
         train_loader:    DataLoader,
         test_loader:     DataLoader,
         config:          dict,

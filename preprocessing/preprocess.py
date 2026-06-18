@@ -1,6 +1,6 @@
 # preprocessing/preprocess.py
 """
-Step 1 - Data Preprocessing for Deepfakedetection
+Step 1 - Data Preprocessing for Detectra
 Pipeline per video:
   1. Extract up to 150 frames with OpenCV VideoCapture
   2. Detect faces per frame with MTCNN

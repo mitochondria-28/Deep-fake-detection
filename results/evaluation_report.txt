@@ -1,5 +1,5 @@
 ============================================================
-  Deepfakedetection — EVALUATION REPORT
+  Detectra — EVALUATION REPORT
   Step 6: Test Set Evaluation
 ============================================================
 

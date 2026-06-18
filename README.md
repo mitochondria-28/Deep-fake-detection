@@ -29,7 +29,7 @@
 
 ## Overview
 
-Deepfakedetection is a deepfake video detection system that classifies videos as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload any video and receive a prediction with a confidence score.
+Detectra is a deepfake video detection system that classifies videos as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload any video and receive a prediction with a confidence score.
 
 ---
 
@@ -91,7 +91,7 @@ Input Video
 ## Project Structure
 
 ```
-Deepfakedetection/
+Detectra/
 ├── data/
 │   ├── final_dataset/
 │   │   ├── Real/              ← raw real videos
@@ -116,7 +116,7 @@ Deepfakedetection/
 │   ├── __init__.py
 │   ├── resnext.py             ← Part A: ResNeXt50 feature extractor
 │   ├── lstm.py                ← Part B: LSTM classifier
-│   ├── Deepfakedetection.py            ← Combined hybrid model
+│   ├── Detectra.py            ← Combined hybrid model
 │   └── verify_model.py        ← Architecture verification
 ├── training/
 │   ├── __init__.py
@@ -201,8 +201,8 @@ Deepfakedetection/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Deepfakedetection.git
-cd Deepfakedetection
+git clone https://github.com/YOUR_USERNAME/Detectra.git
+cd Detectra
 ```
 
 ### 2. Create and activate a virtual environment (recommended)
@@ -525,7 +525,7 @@ pip install -r requirements_web.txt
 ```bash
 cat > .env << 'EOF'
 DJANGO_ENV=development
-SECRET_KEY=Deepfakedetection-local-dev-key-not-for-production
+SECRET_KEY=Detectra-local-dev-key-not-for-production
 DEBUG=True
 CHECKPOINT_PATH=../checkpoints/best_acc.pt
 EOF
@@ -592,10 +592,10 @@ psql postgres
 ```
 
 ```sql
-CREATE DATABASE Deepfakedetection_db;
-CREATE USER Deepfakedetection_user WITH PASSWORD 'your-password';
-GRANT ALL PRIVILEGES ON DATABASE Deepfakedetection_db TO Deepfakedetection_user;
-ALTER DATABASE Deepfakedetection_db OWNER TO Deepfakedetection_user;
+CREATE DATABASE Detectra_db;
+CREATE USER Detectra_user WITH PASSWORD 'your-password';
+GRANT ALL PRIVILEGES ON DATABASE Detectra_db TO Detectra_user;
+ALTER DATABASE Detectra_db OWNER TO Detectra_user;
 \q
 ```
 
@@ -606,8 +606,8 @@ DJANGO_ENV=production
 SECRET_KEY=your-strong-random-secret-key
 DEBUG=False
 CHECKPOINT_PATH=../checkpoints/best_acc.pt
-DB_NAME=Deepfakedetection_db
-DB_USER=Deepfakedetection_user
+DB_NAME=Detectra_db
+DB_USER=Detectra_user
 DB_PASSWORD=your-password
 DB_HOST=localhost
 DB_PORT=5432
@@ -655,7 +655,7 @@ DJANGO_SETTINGS_MODULE=webapp.settings.production gunicorn --config gunicorn.con
 
 ```bash
 # Make sure you are in the webapp directory and settings module is set
-cd Deepfakedetection/webapp
+cd Detectra/webapp
 DJANGO_SETTINGS_MODULE=webapp.settings.development python3 manage.py migrate
 ```
 

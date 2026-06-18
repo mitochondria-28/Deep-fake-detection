@@ -1,6 +1,6 @@
 # preprocessing/split.py  (updated — handles imbalanced source data)
 """
-Step 2 - Data Splitting for Deepfakedetection
+Step 2 - Data Splitting for Detectra
 - Scans data/processed/Real/ and data/processed/Fake/
 - Balances dataset by trimming majority class to minority class size
 - Splits 70% train / 30% test using stratified shuffle split

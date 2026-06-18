@@ -1,6 +1,6 @@
-# model/Deepfakedetection.py
+# model/Detectra.py
 """
-Deepfakedetection — Hybrid ResNeXt50 + LSTM deepfake detection model.
+Detectra — Hybrid ResNeXt50 + LSTM deepfake detection model.
 
 Full forward pass:
   1. Input video tensor  : (batch, seq, 3, 112, 112)
@@ -17,7 +17,7 @@ from model.resnext import ResNeXtExtractor
 from model.lstm import LSTMClassifier
 
 
-class Deepfakedetection(nn.Module):
+class Detectra(nn.Module):
     """
     Hybrid ResNeXt50 + LSTM model for binary deepfake detection.
 

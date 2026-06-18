@@ -1,6 +1,6 @@
 # webapp/detector/inference.py
 """
-Deepfakedetection Inference Engine for Django
+Detectra Inference Engine for Django
 
 Handles:
   - Model + MTCNN loading (called once at startup by apps.py)
@@ -34,7 +34,7 @@ _device = None
 
 def load_models() -> None:
     """
-    Load Deepfakedetection model and MTCNN detector into module-level globals.
+    Load Detectra model and MTCNN detector into module-level globals.
     Called once by detector/apps.py at Django startup.
     """
     global _model, _mtcnn, _device
@@ -50,7 +50,7 @@ def load_models() -> None:
         _device = torch.device("cpu")
     logger.info(f"Inference device: {_device}")
 
-    # ── Deepfakedetection model ────────────────────────────────────────────────────────
+    # ── Detectra model ────────────────────────────────────────────────────────
     checkpoint_path = settings.CHECKPOINT_PATH
     if not Path(checkpoint_path).exists():
         raise FileNotFoundError(
@@ -58,12 +58,20 @@ def load_models() -> None:
             f"Complete Step 5 training before starting the web app."
         )
 
-    # Add Deepfakedetection root to path so model package is importable
-    Deepfakedetection_root = str(Path(checkpoint_path).parent.parent)
-    if Deepfakedetection_root not in sys.path:
-        sys.path.insert(0, Deepfakedetection_root)
+    # Add Detectra root to path so model package is importable
+    Detectra_root = str(Path(checkpoint_path).parent.parent)
+    if Detectra_root not in sys.path:
+        sys.path.insert(0, Detectra_root)
 
-    from model.deepfakedetection import Deepfakedetection
+    # Fallback: derive root from this file's location
+    # inference.py is at: webapp/detector/inference.py
+    # model/ is at:       Deep-fake-detection/model/
+    # So go 3 levels up:  detector/ → webapp/ → Deep-fake-detection/
+    file_root = str(Path(__file__).resolve().parent.parent.parent)
+    if file_root not in sys.path:
+        sys.path.insert(0, file_root)
+
+    from model.detectra import Detectra
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     state_dict = checkpoint["model_state"]
@@ -76,13 +84,13 @@ def load_models() -> None:
             for k, v in state_dict.items()
         }
 
-    model = Deepfakedetection(pretrained=False)
+    model = Detectra(pretrained=False)
     model.load_state_dict(state_dict)
     model = model.to(_device)
     model.eval()
     _model = model
     logger.info(
-        f"Deepfakedetection loaded — epoch {checkpoint.get('epoch', '?')} | "
+        f"Detectra loaded — epoch {checkpoint.get('epoch', '?')} | "
         f"val_acc={checkpoint.get('val_acc', 0):.2f}%"
     )
 

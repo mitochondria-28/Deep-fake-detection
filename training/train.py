@@ -1,6 +1,6 @@
 # training/train.py
 """
-Deepfakedetection — Step 5 Training Entry Point
+Detectra — Step 5 Training Entry Point
 
 Wires together:
   - DataLoaders from Step 3
@@ -17,7 +17,7 @@ import torch
 from pathlib import Path
 
 from dataloader.loader import get_dataloaders
-from model.deepfakedetection import Deepfakedetection
+from model.Detectra import Detectra
 from training.trainer import Trainer
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ def get_device() -> torch.device:
 
 def main() -> None:
     logger.info("=" * 65)
-    logger.info("  Deepfakedetection — STEP 5 TRAINING")
+    logger.info("  Detectra — STEP 5 TRAINING")
     logger.info("=" * 65)
 
     device = get_device()
@@ -78,8 +78,8 @@ def main() -> None:
     )
 
     # ── Model ─────────────────────────────────────────────────────────────────
-    logger.info("Building Deepfakedetection model (pretrained=True)...")
-    model = Deepfakedetection(pretrained=True)
+    logger.info("Building Detectra model (pretrained=True)...")
+    model = Detectra(pretrained=True)
 
     param_info = model.get_trainable_params()
     logger.info(f"  Trainable params : {param_info['trainable']:,} "

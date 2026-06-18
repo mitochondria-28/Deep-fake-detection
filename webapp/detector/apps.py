@@ -1,6 +1,6 @@
 # webapp/detector/apps.py
 """
-Loads the Deepfakedetection model and MTCNN into module-level globals
+Loads the Detectra model and MTCNN into module-level globals
 exactly once when Django starts. All requests share these objects.
 """
 
@@ -26,7 +26,7 @@ class DetectorConfig(AppConfig):
         try:
             from detector import inference
             inference.load_models()
-            logger.info("✓ Deepfakedetection model and MTCNN loaded at startup")
+            logger.info("✓ Detectra model and MTCNN loaded at startup")
         except Exception as e:
             logger.error(f"✗ Failed to load model at startup: {e}")
             raise

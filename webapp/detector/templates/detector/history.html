@@ -1,130 +1,175 @@
 <!-- webapp/detector/templates/detector/history.html -->
-{% extends "detector/base.html" %} {% block title %}Deepfakedetection —
-Prediction History{% endblock %} {% block content %}
+{% extends "detector/base.html" %}
+{% block title %}Detectra — Prediction History{% endblock %}
+{% block content %}
+
 <style>
   .stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 28px;
   }
+
   .stat-card {
-    background: #12122a;
-    border: 1px solid #2a2a5a;
-    border-radius: 12px;
-    padding: 18px;
+    background: #fafafa;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 16px;
     text-align: center;
   }
+
   .stat-card .num {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #00d4ff;
+    font-size: 26px;
+    font-weight: 600;
+    color: #111;
+    font-family: 'Geist Mono', monospace;
   }
+
+  .stat-card .num-real  { color: #166534; }
+  .stat-card .num-fake  { color: #991b1b; }
+  .stat-card .num-uncertain { color: #92400e; }
+
   .stat-card .lbl {
-    font-size: 0.75rem;
-    color: #7777aa;
+    font-size: 11px;
+    color: #aaa;
     margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
+
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.87rem;
+    font-size: 13px;
   }
+
   th {
     text-align: left;
-    padding: 12px 14px;
-    color: #7777aa;
-    font-weight: 600;
-    border-bottom: 1px solid #2a2a5a;
-    font-size: 0.75rem;
+    padding: 10px 12px;
+    color: #aaa;
+    font-weight: 500;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.06em;
+    font-family: 'Geist Mono', monospace;
   }
+
   td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #1a1a3a;
-    color: #cccce8;
+    padding: 11px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #222;
     vertical-align: middle;
   }
-  tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
-  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
   .badge {
     display: inline-block;
-    padding: 3px 10px;
-    border-radius: 99px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    font-family: 'Geist Mono', monospace;
   }
-  .badge-REAL {
-    background: rgba(0, 255, 140, 0.12);
-    color: #00ff8c;
-  }
-  .badge-FAKE {
-    background: rgba(255, 60, 60, 0.12);
-    color: #ff5555;
-  }
-  .badge-UNCERTAIN {
-    background: rgba(255, 200, 0, 0.12);
-    color: #ffc800;
-  }
+
+  .badge-REAL      { background: #f0fdf4; color: #166534; }
+  .badge-FAKE      { background: #fff5f5; color: #991b1b; }
+  .badge-UNCERTAIN { background: #fffbeb; color: #92400e; }
+
   .conf-bar {
-    height: 6px;
-    background: #1e1e3e;
+    height: 4px;
+    background: #f0f0f0;
     border-radius: 99px;
     overflow: hidden;
-    width: 80px;
+    width: 64px;
     display: inline-block;
     vertical-align: middle;
     margin-left: 8px;
   }
+
   .conf-fill {
     height: 100%;
     border-radius: 99px;
-    background: #00d4ff;
-    width: 0%;
+    background: #111;
   }
-  a.view-link {
-    color: #00d4ff;
+
+  .cell-pk {
+    color: #ccc;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+  }
+
+  .cell-fname {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: #444;
+  }
+
+  .cell-mono {
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+  }
+
+  .cell-date {
+    color: #aaa;
+    font-size: 12px;
+    font-family: 'Geist Mono', monospace;
+  }
+
+  .view-link {
+    color: #111;
     text-decoration: none;
-    font-size: 0.8rem;
+    font-size: 12px;
+    font-weight: 500;
+    border-bottom: 1px solid #ccc;
   }
-  a.view-link:hover {
-    text-decoration: underline;
-  }
+
+  .view-link:hover { border-bottom-color: #111; }
+
   .empty-state {
     text-align: center;
-    padding: 48px;
-    color: #555577;
+    padding: 56px 24px;
+    color: #aaa;
+    font-size: 14px;
+  }
+
+  .empty-state a {
+    color: #111;
+    font-weight: 500;
   }
 </style>
 
 <div class="card">
-  <h1>Prediction History</h1>
+  <h1>Prediction history</h1>
   <h2>All past analysis results stored in the database</h2>
 
-  <!-- ── Stats ── -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="num">{{ counts.total }}</div>
-      <div class="lbl">Total Analyzed</div>
+      <div class="lbl">Total analyzed</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color: #00ff8c">{{ counts.real }}</div>
-      <div class="lbl">Classified Real</div>
+      <div class="num num-real">{{ counts.real }}</div>
+      <div class="lbl">Classified real</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color: #ff5555">{{ counts.fake }}</div>
-      <div class="lbl">Classified Fake</div>
+      <div class="num num-fake">{{ counts.fake }}</div>
+      <div class="lbl">Classified fake</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="color: #ffc800">{{ counts.uncertain }}</div>
+      <div class="num num-uncertain">{{ counts.uncertain }}</div>
       <div class="lbl">Uncertain</div>
     </div>
   </div>
 
-  <!-- ── Table ── -->
   {% if records %}
   <table>
     <thead>
@@ -142,35 +187,20 @@ Prediction History{% endblock %} {% block content %}
     <tbody>
       {% for r in records %}
       <tr>
-        <td style="color: #555577">{{ r.pk }}</td>
-        <td
-          style="
-            max-width: 180px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          "
-        >
-          {{ r.filename }}
-        </td>
-        <td>
-          <span class="badge badge-{{ r.label }}">{{ r.label }}</span>
-        </td>
-        <td>
+        <td class="cell-pk">{{ r.pk }}</td>
+        <td class="cell-fname">{{ r.filename }}</td>
+        <td><span class="badge badge-{{ r.label }}">{{ r.label }}</span></td>
+        <td class="cell-mono">
           {{ r.confidence|floatformat:1 }}%
           <span class="conf-bar">
             <span class="conf-fill" data-width="{{ r.confidence }}"></span>
           </span>
         </td>
-        <td>{{ r.frames_analyzed }}</td>
-        <td>{{ r.processing_time|floatformat:1 }}s</td>
-        <td style="color: #666688; font-size: 0.8rem">
-          {{ r.created_at|date:"M d, H:i" }}
-        </td>
+        <td class="cell-mono">{{ r.frames_analyzed }}</td>
+        <td class="cell-mono">{{ r.processing_time|floatformat:1 }}s</td>
+        <td class="cell-date">{{ r.created_at|date:"M d, H:i" }}</td>
         <td>
-          <a class="view-link" href="{% url 'detector:result' r.pk %}"
-            >View →</a
-          >
+          <a class="view-link" href="{% url 'detector:result' r.pk %}">View →</a>
         </td>
       </tr>
       {% endfor %}
@@ -179,15 +209,12 @@ Prediction History{% endblock %} {% block content %}
   {% else %}
   <div class="empty-state">
     No predictions yet.
-    <a href="/" style="color: #00d4ff">Upload a video</a> to get started.
+    <a href="/">Upload a video</a> to get started.
   </div>
   {% endif %}
 </div>
 
 <script>
-  // Set bar widths from data-width attributes after page load.
-  // Avoids Django template expressions inside style attributes
-  // which confuse the VS Code CSS linter.
   document.querySelectorAll(".conf-fill[data-width]").forEach(function (el) {
     var val = parseFloat(el.getAttribute("data-width"));
     if (!isNaN(val)) {
