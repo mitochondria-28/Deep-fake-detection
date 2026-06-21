@@ -1,6 +1,6 @@
 <!-- webapp/detector/templates/detector/upload.html -->
 {% extends "detector/base.html" %}
-{% block title %}Deepfake Detection — Upload Video{% endblock %}
+{% block title %}Deepfake Detection — Upload{% endblock %}
 {% block content %}
 
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
   p.sub {
     font-size: 14px;
     color: #666;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     line-height: 1.6;
   }
 
@@ -38,6 +38,38 @@
     color: #b91c1c;
     margin-bottom: 20px;
   }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    color: #777;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tab-btn.active {
+    background: #fff;
+    color: #111;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   .drop-zone {
     border: 1.5px dashed #ccc;
@@ -175,6 +207,17 @@
     font-family: 'Geist Mono', monospace;
   }
 
+  .image-mode-note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: #92400e;
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+
   .divider {
     border: none;
     border-top: 1px solid #eee;
@@ -212,43 +255,94 @@
 </style>
 
 <div class="page">
-  <h1>Upload a video</h1>
-  <p class="sub">Analyze any video for deepfake manipulation using face detection and neural inference.</p>
+  <h1>Deepfake detection</h1>
+  <p class="sub">Analyze a video or a single image for deepfake manipulation using face detection and neural inference.</p>
 
   {% if error %}
   <div class="error-box">⚠ {{ error }}</div>
   {% endif %}
 
-  <form method="post" enctype="multipart/form-data" id="upload-form">
-    {% csrf_token %}
+  <div class="tabs">
+    <button type="button" class="tab-btn" id="tab-btn-video">Video</button>
+    <button type="button" class="tab-btn" id="tab-btn-image">Image</button>
+  </div>
 
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-      <div class="drop-icon">↑</div>
-      <div class="drop-label">
-        <strong>Drag and drop your video here</strong><br/>
-        or click to browse files
-        <div class="hint">MP4 · AVI · MOV · MKV &nbsp;·&nbsp; Max 100 MB</div>
+  <!-- ── VIDEO TAB ── -->
+  <div class="tab-panel" id="tab-panel-video">
+    <form method="post" action="{% url 'detector:upload' %}" enctype="multipart/form-data" id="video-form">
+      {% csrf_token %}
+
+      <div class="drop-zone" id="video-drop-zone">
+        <div class="drop-icon">↑</div>
+        <div class="drop-label">
+          <strong>Drag and drop your video here</strong><br/>
+          or click to browse files
+          <div class="hint">MP4 · AVI · MOV · MKV &nbsp;·&nbsp; Max 100 MB</div>
+        </div>
       </div>
+
+      <input type="file" id="video-file-input" name="video" accept="video/*" style="display: none;">
+
+      <div class="file-preview" id="video-file-preview">
+        <span style="font-size: 16px;">▶</span>
+        <span class="file-name" id="video-file-name"></span>
+        <span class="file-size" id="video-file-size"></span>
+        <button type="button" class="remove-btn" id="video-remove-btn">✕</button>
+      </div>
+
+      <button class="btn-submit" type="submit" id="video-submit-btn" disabled>
+        Analyze video
+      </button>
+    </form>
+
+    <div class="spinner" id="video-spinner">
+      <div class="spinner-ring"></div>
+      <p>Processing — extracting faces and running inference</p>
+      <small>This may take 20–60 seconds depending on video length</small>
+    </div>
+  </div>
+
+  <!-- ── IMAGE TAB ── -->
+  <div class="tab-panel" id="tab-panel-image">
+    <div class="image-mode-note">
+      <strong>Note on single-image mode:</strong> the model is trained to analyze
+      motion across video frames. For a single image, the one detected face is
+      repeated to fill the required input — this reuses the same trained network
+      but does not perform real temporal analysis. Video upload remains the
+      more reliable detection mode.
     </div>
 
-    <input type="file" id="file-input" name="video" accept="video/*" style="display: none;">
+    <form method="post" action="{% url 'detector:upload_image' %}" enctype="multipart/form-data" id="image-form">
+      {% csrf_token %}
 
-    <div class="file-preview" id="file-preview">
-      <span style="font-size: 16px;">▶</span>
-      <span class="file-name" id="file-name"></span>
-      <span class="file-size" id="file-size"></span>
-      <button type="button" class="remove-btn" id="remove-btn">✕</button>
+      <div class="drop-zone" id="image-drop-zone">
+        <div class="drop-icon">↑</div>
+        <div class="drop-label">
+          <strong>Drag and drop your image here</strong><br/>
+          or click to browse files
+          <div class="hint">JPG · PNG &nbsp;·&nbsp; Max 10 MB</div>
+        </div>
+      </div>
+
+      <input type="file" id="image-file-input" name="image" accept="image/jpeg,image/png" style="display: none;">
+
+      <div class="file-preview" id="image-file-preview">
+        <span style="font-size: 16px;">🖼</span>
+        <span class="file-name" id="image-file-name"></span>
+        <span class="file-size" id="image-file-size"></span>
+        <button type="button" class="remove-btn" id="image-remove-btn">✕</button>
+      </div>
+
+      <button class="btn-submit" type="submit" id="image-submit-btn" disabled>
+        Analyze image
+      </button>
+    </form>
+
+    <div class="spinner" id="image-spinner">
+      <div class="spinner-ring"></div>
+      <p>Processing — detecting face and running inference</p>
+      <small>This usually takes 5–15 seconds</small>
     </div>
-
-    <button class="btn-submit" type="submit" id="submit-btn" disabled>
-      Analyze video
-    </button>
-  </form>
-
-  <div class="spinner" id="spinner">
-    <div class="spinner-ring"></div>
-    <p>Processing — extracting faces and running inference</p>
-    <small>This may take 20–60 seconds depending on video length</small>
   </div>
 
   <hr class="divider">
@@ -270,55 +364,83 @@
 </div>
 
 <script>
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const preview = document.getElementById('file-preview');
-  const fileNameEl = document.getElementById('file-name');
-  const fileSizeEl = document.getElementById('file-size');
-  const submitBtn = document.getElementById('submit-btn');
-  const spinner = document.getElementById('spinner');
-  const form = document.getElementById('upload-form');
-  const removeBtn = document.getElementById('remove-btn');
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  const tabBtnVideo   = document.getElementById('tab-btn-video');
+  const tabBtnImage   = document.getElementById('tab-btn-image');
+  const tabPanelVideo = document.getElementById('tab-panel-video');
+  const tabPanelImage = document.getElementById('tab-panel-image');
 
-  function formatBytes(b) {
-    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  function activateTab(tab) {
+    const isVideo = tab === 'video';
+    tabBtnVideo.classList.toggle('active', isVideo);
+    tabBtnImage.classList.toggle('active', !isVideo);
+    tabPanelVideo.classList.toggle('active', isVideo);
+    tabPanelImage.classList.toggle('active', !isVideo);
   }
 
-  function showFile(file) {
-    if (!file) return;
-    fileNameEl.textContent = file.name;
-    fileSizeEl.textContent = formatBytes(file.size);
-    preview.classList.add('show');
-    submitBtn.disabled = false;
+  tabBtnVideo.addEventListener('click', () => activateTab('video'));
+  tabBtnImage.addEventListener('click', () => activateTab('image'));
+
+  // Default tab — server can request the image tab via {{ active_tab }}
+  const initialTab = "{{ active_tab|default:'video' }}";
+  activateTab(initialTab);
+
+  // ── Generic file-input wiring, reused for both forms ─────────────────────
+  function wireUploadForm(prefix, accept) {
+    const dropZone  = document.getElementById(`${prefix}-drop-zone`);
+    const fileInput = document.getElementById(`${prefix}-file-input`);
+    const preview   = document.getElementById(`${prefix}-file-preview`);
+    const nameEl    = document.getElementById(`${prefix}-file-name`);
+    const sizeEl    = document.getElementById(`${prefix}-file-size`);
+    const submitBtn = document.getElementById(`${prefix}-submit-btn`);
+    const removeBtn = document.getElementById(`${prefix}-remove-btn`);
+    const form       = document.getElementById(`${prefix}-form`);
+    const spinner    = document.getElementById(`${prefix}-spinner`);
+
+    function formatBytes(b) {
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+      return (b / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showFile(file) {
+      if (!file) return;
+      nameEl.textContent = file.name;
+      sizeEl.textContent = formatBytes(file.size);
+      preview.classList.add('show');
+      submitBtn.disabled = false;
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      preview.classList.remove('show');
+      submitBtn.disabled = true;
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => showFile(fileInput.files[0]));
+    removeBtn.addEventListener('click', (e) => { e.stopPropagation(); clearFile(); });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) { fileInput.files = e.dataTransfer.files; showFile(file); }
+    });
+
+    form.addEventListener('submit', () => {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Analyzing…';
+      spinner.classList.add('show');
+    });
   }
 
-  function clearFile() {
-    fileInput.value = '';
-    preview.classList.remove('show');
-    submitBtn.disabled = true;
-  }
-
-  fileInput.addEventListener('change', () => showFile(fileInput.files[0]));
-  removeBtn.addEventListener('click', (e) => { e.stopPropagation(); clearFile(); });
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) { fileInput.files = e.dataTransfer.files; showFile(file); }
-  });
-
-  form.addEventListener('submit', () => {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Analyzing…';
-    spinner.classList.add('show');
-  });
+  wireUploadForm('video', 'video/*');
+  wireUploadForm('image', 'image/*');
 </script>
 
 {% endblock %}

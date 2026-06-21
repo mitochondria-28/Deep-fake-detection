@@ -144,6 +144,7 @@
     color: #aaa;
     margin-top: 8px;
     font-family: 'Geist Mono', monospace;
+    line-height: 1.6;
   }
 
   .meta-grid {
@@ -244,6 +245,18 @@
     <div class="face-grid-caption">
       Green boxes show detected face regions analyzed by MTCNN.
       {{ frames_analyzed }} frames with faces were passed to the model.
+    </div>
+  </div>
+  {% endif %}
+
+  {% if gradcam_grid_url %}
+  <div class="section-title">Grad-CAM heatmap — model attention</div>
+  <div class="face-grid-wrap">
+    <img src="{{ gradcam_grid_url }}" alt="Grad-CAM heatmap overlay" />
+    <div class="face-grid-caption">
+      Red/yellow regions show areas the model weighted most heavily in its
+      {{ label }} decision. Blue/dark regions had minimal influence.
+      Computed via Grad-CAM on the ResNeXt50 feature extractor (layer4).
     </div>
   </div>
   {% endif %}

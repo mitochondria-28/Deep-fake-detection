@@ -5,8 +5,10 @@ Detectra Inference Engine for Django
 Handles:
   - Model + MTCNN loading (called once at startup by apps.py)
   - Per-request video preprocessing (same pipeline as Step 1)
+  - Single-image inference (fallback mode, reuses same model)
   - Model inference with confidence score
   - Face region data for display
+  - Grad-CAM heatmap generation for explainability
 
 MPS (Apple Silicon) is deliberately skipped because Adaptive Average
 Pooling used in ResNeXt is not yet fully implemented on MPS.
@@ -36,6 +38,7 @@ def load_models() -> None:
     """
     Load Detectra model and MTCNN detector into module-level globals.
     Called once by detector/apps.py at Django startup.
+    Shared by both video and image inference — no duplicate loading.
     """
     global _model, _mtcnn, _device
 
@@ -96,6 +99,7 @@ def load_models() -> None:
 
     # ── MTCNN face detector ───────────────────────────────────────────────────
     # Forced to CPU regardless of platform — MPS Adaptive Pool bug
+    # Shared between video and image inference
     from facenet_pytorch import MTCNN
     _mtcnn = MTCNN(
         image_size=112,
@@ -147,6 +151,7 @@ def _extract_frames(video_path: str, max_frames: int = 150) -> list:
 def _detect_face(frame_rgb: np.ndarray) -> tuple:
     """
     Run MTCNN on a single RGB frame.
+    Shared by both video frame processing and single-image processing.
 
     Returns:
         face_crop : (112, 112, 3) uint8 numpy array or None
@@ -182,6 +187,8 @@ def _detect_face(frame_rgb: np.ndarray) -> tuple:
 def _frames_to_tensor(face_frames: list, sequence_length: int = 20) -> torch.Tensor:
     """
     Convert list of face frames to model input tensor.
+    Used by both video inference (real sequence) and image inference
+    (the same frame repeated sequence_length times).
 
     Returns:
         Tensor of shape (1, sequence_length, 3, 112, 112)
@@ -224,6 +231,8 @@ def _save_face_grid(
     """
     Save a grid image showing analyzed facial regions for display in the UI.
     Draws the detected bounding box on each frame thumbnail.
+
+    Used by both video (multiple frames) and image (single frame, n_display=1).
 
     Returns:
         Relative media path string or None on failure.
@@ -285,9 +294,89 @@ def _save_face_grid(
         return None
 
 
+def _save_gradcam_grid(
+    face_frames: list,
+    media_root: str,
+    n_display: int = 6,
+) -> Optional[str]:
+    """
+    Generate Grad-CAM heatmaps for a sample of face frames and save
+    as a grid image, same layout style as the existing face grid.
+
+    Used by both video (multiple frames) and image (single frame, n_display=1).
+
+    Does NOT modify model weights — uses forward/backward hooks only,
+    removed immediately after use.
+
+    Returns:
+        Relative media path string, or None on failure.
+    """
+    global _model, _device
+
+    from model.gradcam import GradCAM, overlay_heatmap
+
+    try:
+        import math
+        from PIL import Image as PILImage
+
+        total = len(face_frames)
+        if total == 0:
+            return None
+
+        display_indices = np.linspace(
+            0, total - 1, min(n_display, total), dtype=int
+        )
+
+        # Grad-CAM requires gradients — hooks are runtime-only, no weight changes
+        cam = GradCAM(_model, _device)
+
+        thumb_w, thumb_h = 180, 180
+        cols    = min(3, len(display_indices))
+        rows    = math.ceil(len(display_indices) / cols)
+        padding = 8
+        grid_w  = cols * thumb_w + (cols + 1) * padding
+        grid_h  = rows * thumb_h + (rows + 1) * padding
+
+        grid = PILImage.new("RGB", (grid_w, grid_h), color=(20, 20, 40))
+
+        try:
+            for i, idx in enumerate(display_indices):
+                face_frame = face_frames[idx]   # (112,112,3) uint8 RGB
+
+                with torch.enable_grad():
+                    heatmap, _, _ = cam.generate(face_frame)
+
+                overlaid = overlay_heatmap(face_frame, heatmap, alpha=0.45)
+                thumb_pil = PILImage.fromarray(overlaid).resize(
+                    (thumb_w, thumb_h), PILImage.LANCZOS
+                )
+
+                row = i // cols
+                col = i % cols
+                x = padding + col * (thumb_w + padding)
+                y = padding + row * (thumb_h + padding)
+                grid.paste(thumb_pil, (x, y))
+        finally:
+            # Always remove hooks — prevents accumulation across requests
+            cam.remove_hooks()
+
+        grid_dir = Path(media_root) / "gradcam_grids"
+        grid_dir.mkdir(parents=True, exist_ok=True)
+        filename  = f"gradcam_{uuid.uuid4().hex[:8]}.jpg"
+        grid_path = grid_dir / filename
+        grid.save(str(grid_path), quality=85)
+
+        return f"gradcam_grids/{filename}"
+
+    except Exception as e:
+        logger.warning(f"Grad-CAM grid generation failed: {e}")
+        return None
+
+
 def run_inference(video_path: str, media_root: str) -> dict:
     """
-    Full inference pipeline for a single uploaded video.
+    Full VIDEO inference pipeline for a single uploaded video.
+    Uses real temporal sequence — genuine LSTM analysis across actual frames.
 
     Args:
         video_path : absolute path to the uploaded video file
@@ -295,13 +384,15 @@ def run_inference(video_path: str, media_root: str) -> dict:
 
     Returns:
         dict with keys:
-            label           : "REAL" | "FAKE" | "UNCERTAIN"
-            confidence      : float 0-100
-            real_prob       : float 0-100
-            fake_prob       : float 0-100
-            frames_analyzed : int
-            face_grid_path  : str or None
-            error           : str or None
+            label              : "REAL" | "FAKE" | "UNCERTAIN"
+            confidence         : float 0-100
+            real_prob          : float 0-100
+            fake_prob          : float 0-100
+            frames_analyzed    : int
+            face_grid_path     : str or None
+            gradcam_grid_path  : str or None
+            detection_mode     : "video"
+            error              : str or None
     """
     global _model, _mtcnn, _device
 
@@ -351,7 +442,13 @@ def run_inference(video_path: str, media_root: str) -> dict:
             media_root=media_root,
         )
 
-        # ── 4. Convert frames to tensor ───────────────────────────────────────
+        # ── 3b. Build Grad-CAM heatmap grid ────────────────────────────────────
+        gradcam_grid_path = _save_gradcam_grid(
+            face_frames=face_frames,
+            media_root=media_root,
+        )
+
+        # ── 4. Convert frames to tensor — REAL sequence, genuine temporal data ─
         input_tensor = _frames_to_tensor(
             face_frames,
             sequence_length=settings.SEQUENCE_LENGTH
@@ -376,13 +473,15 @@ def run_inference(video_path: str, media_root: str) -> dict:
             label = "REAL"
 
         return {
-            "label":           label,
-            "confidence":      round(max_conf, 2),
-            "real_prob":       round(real_prob, 2),
-            "fake_prob":       round(fake_prob, 2),
-            "frames_analyzed": frames_analyzed,
-            "face_grid_path":  face_grid_path,
-            "error":           None,
+            "label":             label,
+            "confidence":        round(max_conf, 2),
+            "real_prob":         round(real_prob, 2),
+            "fake_prob":         round(fake_prob, 2),
+            "frames_analyzed":   frames_analyzed,
+            "face_grid_path":    face_grid_path,
+            "gradcam_grid_path": gradcam_grid_path,
+            "detection_mode":    "video",
+            "error":             None,
         }
 
     except Exception as e:
@@ -397,3 +496,130 @@ def run_inference(video_path: str, media_root: str) -> dict:
                 logger.info(f"Cleaned up temp file: {video_path}")
         except Exception as e:
             logger.warning(f"Could not delete temp file {video_path}: {e}")
+
+
+def run_image_inference(image_path: str, media_root: str) -> dict:
+    """
+    Single-image deepfake detection — reuses the SAME trained Detectra
+    checkpoint and MTCNN instance as video inference. No retraining,
+    no weight changes.
+
+    IMPORTANT LIMITATION (documented honestly, not hidden):
+    The model's LSTM was trained to detect temporal inconsistency across
+    a real sequence of frames. Since a single image has no time axis,
+    this function repeats the one detected face 20 times to satisfy the
+    model's required input shape (1, 20, 3, 112, 112). Every LSTM
+    timestep then receives an identical input, so the recurrence
+    contributes no genuine temporal signal — the prediction is driven
+    almost entirely by ResNeXt's spatial features from that single frame.
+    This is a degraded fallback mode, not equivalent to video analysis.
+
+    Args:
+        image_path : absolute path to the uploaded image file
+        media_root : Django MEDIA_ROOT for saving grid images
+
+    Returns:
+        dict with the SAME keys as run_inference() so result.html
+        can reuse identical template logic, plus:
+            detection_mode : "image"
+    """
+    global _model, _mtcnn, _device
+
+    if _model is None or _mtcnn is None:
+        return {"error": "Model not loaded. Contact administrator."}
+
+    from django.conf import settings
+
+    try:
+        # ── 1. Load the single image ────────────────────────────────────────
+        img_bgr = cv2.imread(image_path)
+        if img_bgr is None:
+            return {
+                "error": (
+                    "Could not read image file. "
+                    "File may be corrupted or format unsupported."
+                )
+            }
+        frame_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+        # ── 2. Detect and crop face — reuses existing video pipeline logic ──
+        face_frame, box = _detect_face(frame_rgb)
+
+        if face_frame is None:
+            return {
+                "error": (
+                    "No face detected in the uploaded image. "
+                    "Please upload an image with a clearly visible face."
+                )
+            }
+
+        # ── 3. Build face grid (single frame, shown once) ──────────────────
+        face_grid_path = _save_face_grid(
+            face_frames=[face_frame],
+            boxes=[box],
+            raw_frames=[frame_rgb],
+            media_root=media_root,
+            n_display=1,
+        )
+
+        # ── 4. Build Grad-CAM heatmap for this single frame ─────────────────
+        gradcam_grid_path = _save_gradcam_grid(
+            face_frames=[face_frame],
+            media_root=media_root,
+            n_display=1,
+        )
+
+        # ── 5. Repeat the single frame 20× to satisfy model's sequence input ─
+        # This is the core limitation — see docstring above. The LSTM receives
+        # 20 identical timesteps, so its recurrence carries no real temporal
+        # signal; the prediction is driven by ResNeXt's spatial features only.
+        sequence_length = settings.SEQUENCE_LENGTH
+        repeated_frames = [face_frame] * sequence_length
+
+        input_tensor = _frames_to_tensor(
+            repeated_frames,
+            sequence_length=sequence_length
+        ).to(_device)   # (1, 20, 3, 112, 112) — 20 identical frames
+
+        # ── 6. Run through the SAME trained model used for video ────────────
+        with torch.no_grad():
+            probs = _model(input_tensor, return_probs=True)  # (1, 2)
+
+        real_prob = float(probs[0][0].cpu()) * 100
+        fake_prob = float(probs[0][1].cpu()) * 100
+
+        # ── 7. Determine label with uncertainty check ───────────────────────
+        threshold = settings.CONFIDENCE_THRESHOLD * 100
+        max_conf  = max(real_prob, fake_prob)
+
+        if max_conf < threshold:
+            label = "UNCERTAIN"
+        elif fake_prob > real_prob:
+            label = "FAKE"
+        else:
+            label = "REAL"
+
+        return {
+            "label":             label,
+            "confidence":        round(max_conf, 2),
+            "real_prob":         round(real_prob, 2),
+            "fake_prob":         round(fake_prob, 2),
+            "frames_analyzed":   1,            # exactly one real face was found
+            "face_grid_path":    face_grid_path,
+            "gradcam_grid_path": gradcam_grid_path,
+            "detection_mode":    "image",
+            "error":             None,
+        }
+
+    except Exception as e:
+        logger.error(f"Image inference error: {e}", exc_info=True)
+        return {"error": f"Inference failed: {str(e)}"}
+
+    finally:
+        # ── 8. Clean up uploaded temp file ───────────────────────────────────
+        try:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+                logger.info(f"Cleaned up temp image file: {image_path}")
+        except Exception as e:
+            logger.warning(f"Could not delete temp file {image_path}: {e}")

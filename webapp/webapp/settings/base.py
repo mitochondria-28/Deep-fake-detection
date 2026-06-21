@@ -78,6 +78,7 @@ MEDIA_ROOT   = BASE_DIR / "media"
 # ── Upload and inference settings ─────────────────────────────────────────────
 MAX_UPLOAD_SIZE_MB   = 100
 ALLOWED_VIDEO_EXTS   = {".mp4", ".avi", ".mov", ".mkv"}
+MAX_IMAGE_UPLOAD_SIZE_MB = 10
 CHECKPOINT_PATH      = os.environ.get(
     "CHECKPOINT_PATH",
     str(Detectra_ROOT / "checkpoints" / "best_acc.pt")
