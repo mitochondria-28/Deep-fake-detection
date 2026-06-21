@@ -3,277 +3,466 @@
 {% block title %}Deepfake Detection — Upload{% endblock %}
 {% block content %}
 
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-  * { box-sizing: border-box; }
-
-  .page {
-    font-family: 'Outfit', sans-serif;
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 48px 24px;
+  .page-head {
+    margin-bottom: 36px;
   }
 
-  h1 {
-    font-size: 22px;
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    color: var(--marker);
+    background: var(--marker-soft);
+    border: 1px solid #ecd9af;
+    padding: 5px 11px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     font-weight: 600;
-    color: #111;
-    margin-bottom: 6px;
   }
 
-  p.sub {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 28px;
-    line-height: 1.6;
+  .eyebrow .pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--marker);
+    animation: pulse 1.8s ease-in-out infinite;
   }
 
-  .error-box {
-    background: #fff5f5;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #b91c1c;
-    margin-bottom: 20px;
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.8); }
+  }
+
+  .page-head h1 { font-size: 28px; }
+  .page-head .sub {
+    font-size: 15px;
+    color: var(--slate);
+    line-height: 1.7;
+    max-width: 540px;
   }
 
   /* ── Tabs ── */
   .tabs {
     display: flex;
     gap: 4px;
-    background: #f0f0f0;
-    border-radius: 10px;
-    padding: 4px;
-    margin-bottom: 24px;
+    background: var(--pale-gray);
+    border-radius: 12px;
+    padding: 5px;
+    margin: 28px 0 28px;
+    max-width: 360px;
   }
   .tab-btn {
     flex: 1;
-    padding: 10px 0;
+    padding: 11px 0;
     text-align: center;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
-    color: #777;
+    font-family: var(--font-display);
+    color: var(--slate);
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
   }
+  .tab-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
   .tab-btn.active {
     background: #fff;
-    color: #111;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    color: var(--charcoal);
+    box-shadow: 0 1px 3px rgba(54, 69, 79, 0.12);
   }
+  .tab-btn:not(.active):hover { color: var(--charcoal-soft); }
 
   .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
 
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Drop zone ── */
   .drop-zone {
-    border: 1.5px dashed #ccc;
-    border-radius: 12px;
-    padding: 48px 24px;
+    border: 1.5px dashed #cfd3d6;
+    border-radius: var(--radius-md);
+    padding: 64px 28px;
     text-align: center;
     cursor: pointer;
-    background: #fafafa;
-    transition: border-color 0.2s, background 0.2s;
+    background: #fcfcfc;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
   }
 
-  .drop-zone:hover,
+  .drop-zone:hover {
+    border-color: var(--slate-light);
+    background: #f7f8f8;
+  }
+
   .drop-zone.drag-over {
-    border-color: #111;
-    background: #f4f4f4;
+    border-color: var(--marker);
+    background: var(--marker-soft);
+    transform: scale(1.01);
   }
 
-  .drop-icon {
-    font-size: 28px;
-    margin-bottom: 12px;
-    color: #555;
+  .drop-zone-scan {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--marker), transparent);
+    opacity: 0;
+  }
+
+  .drop-zone.drag-over .drop-zone-scan {
+    opacity: 1;
+    animation: scanY 1.1s linear infinite;
+  }
+
+  @keyframes scanY {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+
+  .drop-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--pale-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .drop-zone:hover .drop-icon-wrap {
+    transform: translateY(-2px);
+  }
+
+  .drop-zone.drag-over .drop-icon-wrap {
+    background: #fff;
+  }
+
+  .drop-icon-wrap svg {
+    width: 24px;
+    height: 24px;
+    color: var(--charcoal-soft);
   }
 
   .drop-label {
-    font-size: 14px;
-    color: #555;
+    font-size: 15px;
+    color: var(--slate);
     line-height: 1.8;
   }
 
   .drop-label strong {
-    color: #111;
+    color: var(--charcoal);
     font-weight: 600;
   }
 
   .drop-label .hint {
-    font-size: 12px;
-    color: #999;
-    margin-top: 6px;
-    font-family: 'Geist Mono', monospace;
+    font-size: 12.5px;
+    color: var(--slate-light);
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.01em;
   }
 
+  /* ── File preview ── */
   .file-preview {
     display: none;
-    margin-top: 14px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 16px;
+    margin-top: 16px;
+    border: 1px solid #e6e6e6;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     background: #fff;
+    animation: fadeIn 0.2s ease;
   }
 
   .file-preview.show { display: flex; }
 
+  .file-preview-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--pale-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .file-preview-icon svg {
+    width: 17px;
+    height: 17px;
+    color: var(--charcoal-soft);
+  }
+
+  .file-meta { flex: 1; min-width: 0; }
+
   .file-name {
-    flex: 1;
-    font-size: 13px;
-    color: #222;
+    font-size: 13.5px;
+    color: var(--charcoal);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'Geist Mono', monospace;
+    font-family: var(--font-mono);
+    font-weight: 500;
   }
 
   .file-size {
     font-size: 12px;
-    color: #999;
-    white-space: nowrap;
-    font-family: 'Geist Mono', monospace;
+    color: var(--slate-light);
+    font-family: var(--font-mono);
+    margin-top: 2px;
   }
 
   .remove-btn {
     font-size: 13px;
-    color: #999;
+    color: var(--slate-light);
     cursor: pointer;
     border: none;
     background: none;
-    padding: 0;
+    padding: 6px;
     line-height: 1;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
   }
 
-  .remove-btn:hover { color: #111; }
+  .remove-btn:hover { color: var(--danger); background: var(--danger-bg); }
 
+  /* ── Submit button ── */
   .btn-submit {
-    margin-top: 20px;
+    margin-top: 22px;
     width: 100%;
-    padding: 13px;
-    background: #111;
+    padding: 15px;
+    background: var(--charcoal);
     color: #fff;
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--font-display);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
     letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
   }
 
-  .btn-submit:hover { background: #333; }
+  .btn-submit svg { width: 16px; height: 16px; }
+
+  .btn-submit:hover:not(:disabled) {
+    background: #222e35;
+    box-shadow: 0 4px 14px rgba(54, 69, 79, 0.25);
+  }
+
+  .btn-submit:active:not(:disabled) { transform: scale(0.99); }
 
   .btn-submit:disabled {
-    background: #ccc;
+    background: var(--light-gray);
+    color: #999;
     cursor: not-allowed;
   }
 
+  /* ── Spinner / processing state ── */
   .spinner {
     display: none;
-    margin-top: 20px;
-    text-align: center;
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: var(--radius-sm);
+    background: var(--pale-gray);
   }
 
-  .spinner.show { display: block; }
+  .spinner.show { display: block; animation: fadeIn 0.2s ease; }
+
+  .spinner-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
 
   .spinner-ring {
-    width: 22px;
-    height: 22px;
-    border: 2px solid #e0e0e0;
-    border-top-color: #111;
+    width: 30px;
+    height: 30px;
+    border: 2.5px solid #dcdfe1;
+    border-top-color: var(--marker);
     border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 10px;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .spinner p {
-    font-size: 13px;
-    color: #666;
+  .spinner-text p {
+    font-size: 13.5px;
+    color: var(--charcoal-soft);
+    font-weight: 500;
   }
 
-  .spinner small {
+  .spinner-text small {
     font-size: 12px;
-    color: #aaa;
-    font-family: 'Geist Mono', monospace;
+    color: var(--slate);
+    font-family: var(--font-mono);
   }
 
+  .progress-track {
+    margin-top: 14px;
+    height: 4px;
+    background: #e3e6e7;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 35%;
+    background: var(--marker);
+    border-radius: 999px;
+    animation: indeterminate 1.4s ease-in-out infinite;
+  }
+
+  @keyframes indeterminate {
+    0% { transform: translateX(-100%); width: 35%; }
+    50% { width: 50%; }
+    100% { transform: translateX(220%); width: 35%; }
+  }
+
+  /* ── Image mode note ── */
   .image-mode-note {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 12.5px;
-    color: #92400e;
-    margin-bottom: 18px;
-    line-height: 1.6;
+    background: var(--marker-soft);
+    border: 1px solid #ecd9af;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #7a5c1c;
+    margin-bottom: 20px;
+    line-height: 1.65;
+    display: flex;
+    gap: 12px;
   }
 
+  .image-mode-note svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--marker);
+  }
+
+  .image-mode-note strong { color: #5c4515; }
+
+  /* ── Divider + info grid ── */
   .divider {
     border: none;
     border-top: 1px solid #eee;
-    margin: 32px 0;
+    margin: 40px 0 28px;
+  }
+
+  .info-grid-label {
+    font-size: 11px;
+    color: var(--slate-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 14px;
+    font-family: var(--font-mono);
   }
 
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 14px;
   }
 
   .info-card {
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    padding: 14px 12px;
+    border: 1px solid #ececec;
+    border-radius: var(--radius-sm);
+    padding: 18px 14px;
     text-align: center;
-    background: #fff;
+    background: #fcfcfc;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  .info-card:hover {
+    border-color: var(--slate-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
   }
 
   .info-card .lbl {
     font-size: 11px;
-    color: #999;
-    margin-bottom: 4px;
+    color: var(--slate-light);
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    font-weight: 600;
   }
 
   .info-card .val {
-    font-size: 13px;
-    color: #111;
+    font-size: 14px;
+    color: var(--charcoal);
     font-weight: 600;
-    font-family: 'Geist Mono', monospace;
+    font-family: var(--font-mono);
+  }
+
+  @media (max-width: 540px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .card { padding: 28px 22px; }
+    .drop-zone { padding: 44px 18px; }
   }
 </style>
 
-<div class="page">
+<div class="page-head">
+  <span class="eyebrow"><span class="pulse"></span> Detection engine online</span>
   <h1>Deepfake detection</h1>
-  <p class="sub">Analyze a video or a single image for deepfake manipulation using face detection and neural inference.</p>
+  <p class="sub">Upload a video or image and Detectra analyzes faces frame-by-frame using neural inference to flag manipulation.</p>
+</div>
+
+<div class="card">
 
   {% if error %}
-  <div class="error-box">⚠ {{ error }}</div>
+  <div class="error-box">
+    <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0;"><path d="M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A1 1 0 003 19.5h18a1 1 0 00.89-1.46L13.71 3.86a1 1 0 00-1.42 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    {{ error }}
+  </div>
   {% endif %}
 
-  <div class="tabs">
-    <button type="button" class="tab-btn" id="tab-btn-video">Video</button>
-    <button type="button" class="tab-btn" id="tab-btn-image">Image</button>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab-btn" id="tab-btn-video" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Video
+    </button>
+    <button type="button" class="tab-btn" id="tab-btn-image" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Image
+    </button>
   </div>
 
   <!-- ── VIDEO TAB ── -->
-  <div class="tab-panel" id="tab-panel-video">
+  <div class="tab-panel" id="tab-panel-video" role="tabpanel">
     <form method="post" action="{% url 'detector:upload' %}" enctype="multipart/form-data" id="video-form">
       {% csrf_token %}
 
-      <div class="drop-zone" id="video-drop-zone">
-        <div class="drop-icon">↑</div>
+      <div class="drop-zone" id="video-drop-zone" tabindex="0" role="button" aria-label="Choose a video file">
+        <div class="drop-zone-scan"></div>
+        <div class="drop-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
         <div class="drop-label">
           <strong>Drag and drop your video here</strong><br/>
           or click to browse files
@@ -284,39 +473,51 @@
       <input type="file" id="video-file-input" name="video" accept="video/*" style="display: none;">
 
       <div class="file-preview" id="video-file-preview">
-        <span style="font-size: 16px;">▶</span>
-        <span class="file-name" id="video-file-name"></span>
-        <span class="file-size" id="video-file-size"></span>
-        <button type="button" class="remove-btn" id="video-remove-btn">✕</button>
+        <div class="file-preview-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="file-meta">
+          <div class="file-name" id="video-file-name"></div>
+          <div class="file-size" id="video-file-size"></div>
+        </div>
+        <button type="button" class="remove-btn" id="video-remove-btn" aria-label="Remove file">
+          <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
 
       <button class="btn-submit" type="submit" id="video-submit-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Analyze video
       </button>
     </form>
 
     <div class="spinner" id="video-spinner">
-      <div class="spinner-ring"></div>
-      <p>Processing — extracting faces and running inference</p>
-      <small>This may take 20–60 seconds depending on video length</small>
+      <div class="spinner-row">
+        <div class="spinner-ring"></div>
+        <div class="spinner-text">
+          <p>Processing — extracting faces and running inference</p>
+          <small>Typically 20–60 seconds depending on video length</small>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
     </div>
   </div>
 
   <!-- ── IMAGE TAB ── -->
-  <div class="tab-panel" id="tab-panel-image">
+  <div class="tab-panel" id="tab-panel-image" role="tabpanel">
     <div class="image-mode-note">
-      <strong>Note on single-image mode:</strong> the model is trained to analyze
-      motion across video frames. For a single image, the one detected face is
-      repeated to fill the required input — this reuses the same trained network
-      but does not perform real temporal analysis. Video upload remains the
-      more reliable detection mode.
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A1 1 0 003 19.5h18a1 1 0 00.89-1.46L13.71 3.86a1 1 0 00-1.42 0z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>Single-image mode:</strong> the model is trained to read motion across video frames. For a single image, the detected face is repeated to fill that input — same trained network, but no real temporal signal. Video upload stays the more reliable mode.</div>
     </div>
 
     <form method="post" action="{% url 'detector:upload_image' %}" enctype="multipart/form-data" id="image-form">
       {% csrf_token %}
 
-      <div class="drop-zone" id="image-drop-zone">
-        <div class="drop-icon">↑</div>
+      <div class="drop-zone" id="image-drop-zone" tabindex="0" role="button" aria-label="Choose an image file">
+        <div class="drop-zone-scan"></div>
+        <div class="drop-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
         <div class="drop-label">
           <strong>Drag and drop your image here</strong><br/>
           or click to browse files
@@ -327,26 +528,39 @@
       <input type="file" id="image-file-input" name="image" accept="image/jpeg,image/png" style="display: none;">
 
       <div class="file-preview" id="image-file-preview">
-        <span style="font-size: 16px;">🖼</span>
-        <span class="file-name" id="image-file-name"></span>
-        <span class="file-size" id="image-file-size"></span>
-        <button type="button" class="remove-btn" id="image-remove-btn">✕</button>
+        <div class="file-preview-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="file-meta">
+          <div class="file-name" id="image-file-name"></div>
+          <div class="file-size" id="image-file-size"></div>
+        </div>
+        <button type="button" class="remove-btn" id="image-remove-btn" aria-label="Remove file">
+          <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
 
       <button class="btn-submit" type="submit" id="image-submit-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Analyze image
       </button>
     </form>
 
     <div class="spinner" id="image-spinner">
-      <div class="spinner-ring"></div>
-      <p>Processing — detecting face and running inference</p>
-      <small>This usually takes 5–15 seconds</small>
+      <div class="spinner-row">
+        <div class="spinner-ring"></div>
+        <div class="spinner-text">
+          <p>Processing — detecting face and running inference</p>
+          <small>Typically 5–15 seconds</small>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
     </div>
   </div>
 
   <hr class="divider">
 
+  <div class="info-grid-label">Model specification</div>
   <div class="info-grid">
     <div class="info-card">
       <div class="lbl">Architecture</div>
@@ -374,6 +588,8 @@
     const isVideo = tab === 'video';
     tabBtnVideo.classList.toggle('active', isVideo);
     tabBtnImage.classList.toggle('active', !isVideo);
+    tabBtnVideo.setAttribute('aria-selected', isVideo);
+    tabBtnImage.setAttribute('aria-selected', !isVideo);
     tabPanelVideo.classList.toggle('active', isVideo);
     tabPanelImage.classList.toggle('active', !isVideo);
   }
@@ -386,7 +602,7 @@
   activateTab(initialTab);
 
   // ── Generic file-input wiring, reused for both forms ─────────────────────
-  function wireUploadForm(prefix, accept) {
+  function wireUploadForm(prefix) {
     const dropZone  = document.getElementById(`${prefix}-drop-zone`);
     const fileInput = document.getElementById(`${prefix}-file-input`);
     const preview   = document.getElementById(`${prefix}-file-preview`);
@@ -417,6 +633,9 @@
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
     fileInput.addEventListener('change', () => showFile(fileInput.files[0]));
     removeBtn.addEventListener('click', (e) => { e.stopPropagation(); clearFile(); });
 
@@ -434,13 +653,13 @@
 
     form.addEventListener('submit', () => {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Analyzing…';
+      submitBtn.innerHTML = 'Analyzing…';
       spinner.classList.add('show');
     });
   }
 
-  wireUploadForm('video', 'video/*');
-  wireUploadForm('image', 'image/*');
+  wireUploadForm('video');
+  wireUploadForm('image');
 </script>
 
 {% endblock %}

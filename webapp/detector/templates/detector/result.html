@@ -4,211 +4,373 @@
 
 {% block content %}
 <style>
+  .result-head {
+    margin-bottom: 28px;
+  }
+
+  .result-head .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    color: var(--slate);
+    background: var(--pale-gray);
+    border: 1px solid #e2e2e2;
+    padding: 5px 11px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .result-head h1 { font-size: 26px; }
+
+  /* ── Verdict ── */
   .verdict {
-    border-radius: 10px;
-    padding: 28px 24px;
-    margin-bottom: 24px;
-    border: 1px solid;
+    border-radius: var(--radius-md);
+    padding: 32px 28px;
+    margin-bottom: 26px;
+    border: 1.5px solid;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
   }
-  .verdict.REAL      { background: #f0fdf4; border-color: #bbf7d0; }
-  .verdict.FAKE      { background: #fff5f5; border-color: #fecaca; }
-  .verdict.UNCERTAIN { background: #fffbeb; border-color: #fde68a; }
 
-  .verdict-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+  .verdict.REAL      { background: var(--safe-bg); border-color: #cfe6da; }
+  .verdict.FAKE      { background: var(--danger-bg); border-color: #f0d4d1; }
+  .verdict.UNCERTAIN { background: var(--marker-soft); border-color: #ecd9af; }
+
+  .verdict-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
   }
-  .REAL .verdict-indicator      { background: #22c55e; }
-  .FAKE .verdict-indicator      { background: #ef4444; }
-  .UNCERTAIN .verdict-indicator { background: #f59e0b; }
+  .verdict-icon svg { width: 28px; height: 28px; }
+
+  .REAL .verdict-icon      { background: #fff; color: var(--safe); }
+  .FAKE .verdict-icon      { background: #fff; color: var(--danger); }
+  .UNCERTAIN .verdict-icon { background: #fff; color: var(--marker); }
 
   .verdict-left { flex: 1; }
 
-  .verdict-label {
-    font-size: 22px;
+  .verdict-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
     font-weight: 600;
-    font-family: 'Geist Mono', monospace;
-    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
   }
-  .REAL .verdict-label      { color: #166534; }
-  .FAKE .verdict-label      { color: #991b1b; }
-  .UNCERTAIN .verdict-label { color: #92400e; }
+  .REAL .verdict-eyebrow      { color: #4d9a73; }
+  .FAKE .verdict-eyebrow      { color: #cf6b62; }
+  .UNCERTAIN .verdict-eyebrow { color: #c9962e; }
+
+  .verdict-label {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: 0.01em;
+  }
+  .REAL .verdict-label      { color: #225b3e; }
+  .FAKE .verdict-label      { color: #7a2e28; }
+  .UNCERTAIN .verdict-label { color: #7a5c1c; }
 
   .verdict-conf {
-    font-size: 13px;
-    color: #888;
-    margin-top: 4px;
+    font-size: 13.5px;
+    color: var(--slate);
+    margin-top: 6px;
   }
-  .verdict-conf strong { color: #111; }
+  .verdict-conf strong { color: var(--charcoal); font-family: var(--font-mono); }
+
+  .verdict-ring {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    position: relative;
+  }
+
+  .verdict-ring svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+  .verdict-ring-track { fill: none; stroke: rgba(0,0,0,0.07); stroke-width: 6; }
+  .verdict-ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1); }
+  .REAL .verdict-ring-fill      { stroke: var(--safe); }
+  .FAKE .verdict-ring-fill      { stroke: var(--danger); }
+  .UNCERTAIN .verdict-ring-fill { stroke: var(--marker); }
+
+  .verdict-ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--charcoal);
+  }
 
   .uncertain-note {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 12px 16px;
-    color: #92400e;
+    background: var(--marker-soft);
+    border: 1px solid #ecd9af;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    color: #7a5c1c;
     font-size: 13px;
-    margin-bottom: 22px;
-    line-height: 1.6;
+    margin-bottom: 24px;
+    line-height: 1.65;
+    display: flex;
+    gap: 12px;
   }
+  .uncertain-note svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; color: var(--marker); }
+  .uncertain-note strong { color: #5c4515; }
 
+  /* ── Probability cards ── */
   .prob-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 24px;
   }
   .prob-card {
     flex: 1;
-    background: #fafafa;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    padding: 16px;
+    background: #fcfcfc;
+    border: 1px solid #ececec;
+    border-radius: var(--radius-sm);
+    padding: 18px;
     text-align: center;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .prob-card:hover {
+    border-color: var(--slate-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
   }
   .prob-card .plabel {
     font-size: 11px;
-    color: #aaa;
-    margin-bottom: 6px;
+    color: var(--slate-light);
+    margin-bottom: 8px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-family: 'Geist Mono', monospace;
+    letter-spacing: 0.06em;
+    font-family: var(--font-mono);
+    font-weight: 600;
   }
   .prob-card .pvalue {
-    font-size: 24px;
-    font-weight: 600;
-    font-family: 'Geist Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--font-mono);
   }
-  .prob-card.real .pvalue { color: #166534; }
-  .prob-card.fake .pvalue { color: #991b1b; }
+  .prob-card.real .pvalue { color: var(--safe); }
+  .prob-card.fake .pvalue { color: var(--danger); }
 
-  .bar-wrap { margin-bottom: 14px; }
+  .bar-wrap { margin-bottom: 16px; }
   .bar-label {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
-    color: #aaa;
-    margin-bottom: 5px;
-    font-family: 'Geist Mono', monospace;
+    font-size: 12.5px;
+    color: var(--slate-light);
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
   }
-  .bar-label span:first-child { color: #555; font-weight: 500; }
+  .bar-label span:first-child { color: var(--charcoal-soft); font-weight: 600; }
   .bar-track {
-    height: 6px;
-    background: #f0f0f0;
+    height: 8px;
+    background: var(--pale-gray);
     border-radius: 99px;
     overflow: hidden;
   }
   .bar-fill {
     height: 100%;
     border-radius: 99px;
-    transition: width 1s ease;
+    width: 0%;
+    transition: width 1.1s cubic-bezier(0.4,0,0.2,1);
   }
-  .bar-fill.real { background: #22c55e; }
-  .bar-fill.fake { background: #ef4444; }
+  .bar-fill.real { background: var(--safe); }
+  .bar-fill.fake { background: var(--danger); }
 
   .divider {
     border: none;
-    border-top: 1px solid #f0f0f0;
-    margin: 20px 0;
+    border-top: 1px solid #eee;
+    margin: 28px 0;
   }
 
   .section-title {
     font-size: 11px;
     letter-spacing: 0.08em;
-    color: #bbb;
+    color: var(--slate-light);
     text-transform: uppercase;
-    margin-bottom: 12px;
-    margin-top: 24px;
-    font-family: 'Geist Mono', monospace;
+    margin-bottom: 14px;
+    margin-top: 28px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .section-title svg { width: 13px; height: 13px; color: var(--slate-light); }
 
+  /* ── Face grid / Grad-CAM ── */
   .face-grid-wrap {
-    background: #fafafa;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 20px;
+    background: #fcfcfc;
+    border: 1px solid #ececec;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 8px;
     text-align: center;
   }
   .face-grid-wrap img {
     max-width: 100%;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid #e8e8e8;
+    display: block;
+    margin: 0 auto;
   }
   .face-grid-caption {
     font-size: 12px;
-    color: #aaa;
-    margin-top: 8px;
-    font-family: 'Geist Mono', monospace;
-    line-height: 1.6;
+    color: var(--slate-light);
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    line-height: 1.7;
+    text-align: left;
   }
 
+  /* ── Meta grid ── */
   .meta-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 8px;
   }
   .meta-item {
-    background: #fafafa;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    padding: 14px 16px;
+    background: #fcfcfc;
+    border: 1px solid #ececec;
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    transition: border-color 0.2s;
   }
+  .meta-item:hover { border-color: var(--slate-light); }
   .meta-item .k {
     font-size: 11px;
-    color: #aaa;
-    margin-bottom: 4px;
+    color: var(--slate-light);
+    margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-family: 'Geist Mono', monospace;
+    font-family: var(--font-mono);
+    font-weight: 600;
   }
   .meta-item .v {
-    font-size: 13px;
-    color: #111;
-    font-weight: 500;
-    font-family: 'Geist Mono', monospace;
+    font-size: 13.5px;
+    color: var(--charcoal);
+    font-weight: 600;
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Actions ── */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
   }
 
   .btn-back {
-    display: block;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-align: center;
-    padding: 13px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    color: #111;
+    padding: 14px;
+    background: var(--charcoal);
+    border: 1px solid var(--charcoal);
+    border-radius: var(--radius-sm);
+    color: #fff;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 14px;
-    transition: border-color 0.15s, background 0.15s;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
   }
+  .btn-back svg { width: 15px; height: 15px; }
   .btn-back:hover {
-    background: #f7f7f7;
-    border-color: #aaa;
+    background: #222e35;
+    box-shadow: 0 4px 14px rgba(54, 69, 79, 0.25);
+  }
+  .btn-back:active { transform: scale(0.99); }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: var(--radius-sm);
+    color: var(--charcoal-soft);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: border-color 0.15s, color 0.15s, transform 0.15s;
+  }
+  .btn-secondary svg { width: 15px; height: 15px; }
+  .btn-secondary:hover {
+    border-color: var(--slate-light);
+    color: var(--charcoal);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 540px) {
+    .meta-grid { grid-template-columns: 1fr; }
+    .prob-row { flex-direction: column; }
+    .verdict { flex-wrap: wrap; }
+    .card { padding: 28px 22px; }
+    .actions { flex-direction: column; }
   }
 </style>
 
-<div class="card">
+<div class="result-head">
+  <span class="eyebrow">Analysis complete</span>
+  <h1>Detection result</h1>
+</div>
+
+<div class="card" id="result-card" data-real-prob="{{ real_prob }}" data-fake-prob="{{ fake_prob }}" data-confidence="{{ confidence }}">
 
   <div class="verdict {{ label }}">
-    <div class="verdict-indicator"></div>
+    <div class="verdict-icon">
+      {% if label == "REAL" %}
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      {% elif label == "FAKE" %}
+      <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A1 1 0 003 19.5h18a1 1 0 00.89-1.46L13.71 3.86a1 1 0 00-1.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      {% endif %}
+    </div>
     <div class="verdict-left">
+      <div class="verdict-eyebrow">
+        {% if label == "REAL" %}No manipulation detected{% elif label == "FAKE" %}Manipulation detected{% else %}Inconclusive{% endif %}
+      </div>
       <div class="verdict-label">{{ label }}</div>
       <div class="verdict-conf">Confidence: <strong>{{ confidence }}%</strong></div>
+    </div>
+    <div class="verdict-ring">
+      <svg viewBox="0 0 64 64">
+        <circle class="verdict-ring-track" cx="32" cy="32" r="27"></circle>
+        <circle class="verdict-ring-fill" id="verdict-ring-fill" cx="32" cy="32" r="27"
+          stroke-dasharray="169.65" stroke-dashoffset="169.65"></circle>
+      </svg>
+      <div class="verdict-ring-text">{{ confidence }}%</div>
     </div>
   </div>
 
   {% if label == "UNCERTAIN" %}
   <div class="uncertain-note">
-    The model's confidence (<strong>{{ confidence }}%</strong>) is below the
-    threshold of 75%. The video could not be classified with sufficient
-    certainty. This may occur with low-quality video, partial face visibility,
-    or unusual lighting conditions. Consider uploading a higher quality video.
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A1 1 0 003 19.5h18a1 1 0 00.89-1.46L13.71 3.86a1 1 0 00-1.42 0z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>The model's confidence (<strong>{{ confidence }}%</strong>) is below the threshold of 75%. The video could not be classified with sufficient certainty. This may occur with low-quality video, partial face visibility, or unusual lighting conditions. Consider uploading a higher quality video.</div>
   </div>
   {% endif %}
 
@@ -239,29 +401,35 @@
   <div class="divider"></div>
 
   {% if face_grid_url %}
-  <div class="section-title">Analyzed facial regions</div>
+  <div class="section-title">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Analyzed facial regions
+  </div>
   <div class="face-grid-wrap">
     <img src="{{ face_grid_url }}" alt="Detected face regions" />
     <div class="face-grid-caption">
-      Green boxes show detected face regions analyzed by MTCNN.
-      {{ frames_analyzed }} frames with faces were passed to the model.
+      Green boxes show detected face regions analyzed by MTCNN. {{ frames_analyzed }} frames with faces were passed to the model.
     </div>
   </div>
   {% endif %}
 
   {% if gradcam_grid_url %}
-  <div class="section-title">Grad-CAM heatmap — model attention</div>
+  <div class="section-title">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3m0 14v3m10-10h-3M5 12H2m15.07-7.07l-2.12 2.12M9.05 14.95l-2.12 2.12m12.14 0l-2.12-2.12M9.05 9.05L6.93 6.93" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Grad-CAM heatmap — model attention
+  </div>
   <div class="face-grid-wrap">
     <img src="{{ gradcam_grid_url }}" alt="Grad-CAM heatmap overlay" />
     <div class="face-grid-caption">
-      Red/yellow regions show areas the model weighted most heavily in its
-      {{ label }} decision. Blue/dark regions had minimal influence.
-      Computed via Grad-CAM on the ResNeXt50 feature extractor (layer4).
+      Red/yellow regions show areas the model weighted most heavily in its {{ label }} decision. Blue/dark regions had minimal influence. Computed via Grad-CAM on the ResNeXt50 feature extractor (layer4).
     </div>
   </div>
   {% endif %}
 
-  <div class="section-title">Analysis details</div>
+  <div class="section-title">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 17v-2m3 2v-4m3 4v-6M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Analysis details
+  </div>
   <div class="meta-grid">
     <div class="meta-item">
       <div class="k">File analyzed</div>
@@ -281,16 +449,37 @@
     </div>
   </div>
 
-  <a class="btn-back" href="/">← Analyze another video</a>
+  <div class="actions">
+    <a class="btn-back" href="/">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Analyze another file
+    </a>
+    <a class="btn-secondary" href="/history/">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      View history
+    </a>
+  </div>
 </div>
 
 <script>
-  window.addEventListener("load", () => {
-    setTimeout(() => {
-      document.getElementById("bar-real").style.width = "{{ real_prob }}%";
-      document.getElementById("bar-fake").style.width = "{{ fake_prob }}%";
-    }, 100);
-  });
+  function animateResults() {
+    const card = document.getElementById("result-card");
+    const realPct = parseFloat(card.dataset.realProb);
+    const fakePct = parseFloat(card.dataset.fakeProb);
+    const confPct = parseFloat(card.dataset.confidence);
+
+    document.getElementById("bar-real").style.width = realPct + "%";
+    document.getElementById("bar-fake").style.width = fakePct + "%";
+
+    const ring = document.getElementById("verdict-ring-fill");
+    const circumference = 169.65;
+    const offset = circumference - (confPct / 100) * circumference;
+    ring.style.strokeDashoffset = offset;
+  }
+
+  // Double rAF ensures the browser has painted the initial (0%) state
+  // before we transition to the target values, so the animation always runs.
+  requestAnimationFrame(() => requestAnimationFrame(animateResults));
 </script>
 
 {% endblock %}
