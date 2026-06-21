@@ -1,7 +1,7 @@
 # Deepfake Detection System
 
 
-> Hybrid ResNeXt50 + LSTM architecture for binary deepfake video classification
+> Hybrid ResNeXt50 + LSTM architecture for binary deepfake video and image classification, with Grad-CAM explainability
 
 ---
 
@@ -9,6 +9,9 @@
 
 - [Overview](#overview)
 - [System Architecture](#system-architecture)
+- [Additional Features](#additional-features)
+  - [Grad-CAM Explainability](#grad-cam-explainability)
+  - [Single-Image Detection Mode](#single-image-detection-mode)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Dataset](#dataset)
@@ -30,7 +33,7 @@
 
 ## Overview
 
-Detectra is a deepfake video detection system that classifies videos as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload any video and receive a prediction with a confidence score.
+Detectra is a deepfake detection system that classifies **videos and images** as **REAL** or **FAKE** using a hybrid deep learning architecture. It combines a pretrained ResNeXt50 CNN for per-frame spatial feature extraction with an LSTM for temporal modelling across frame sequences. A Django web interface allows users to upload a video or a single image and receive a prediction with a confidence score, alongside a Grad-CAM heatmap showing which facial regions most influenced the decision.
 
 ---
 
@@ -68,6 +71,50 @@ Input Video
      ▼
   REAL / FAKE + confidence %
 ```
+
+---
+
+## Additional Features
+
+Two features were added on top of the core video pipeline to broaden scope and add model explainability, without retraining or modifying the trained checkpoint in any way.
+
+### Grad-CAM Explainability
+
+Every prediction (video or image) is accompanied by a Grad-CAM heatmap grid showing which facial regions the model focused on most when making its decision.
+
+**How it works:**
+- Hooks into `layer4` of the ResNeXt50 backbone (`model/resnext.py`) — the last convolutional block before average pooling, since it is the deepest layer that still retains spatial dimensions `(batch, 2048, 4, 4)`
+- Computes gradients of the predicted class with respect to `layer4`'s activations using a forward + backward hook, applied per-frame
+- Combines weighted activation maps into a heatmap, resizes to 112×112, and overlays it on the original face crop (red/yellow = high importance, blue/dark = low importance)
+- Hooks are registered and removed per request — no persistent state, no modification to saved model weights
+- Implemented in `model/gradcam.py`, called from `webapp/detector/inference.py` via `_save_gradcam_grid()`
+
+**Why it matters:** Real deepfake artifacts typically concentrate around blending boundaries — jawline, hairline, eye region, teeth. A heatmap that lights up in those exact zones is visual evidence the model is learning genuine forensic patterns rather than guessing.
+
+**Limitation to note:** Grad-CAM is applied to the ResNeXt (CNN) stage only. It explains *where* each frame looked suspicious, not *how* the LSTM weighed information across the time dimension. The LSTM's temporal reasoning itself is not directly visualised.
+
+### Single-Image Detection Mode
+
+Detectra originally only accepted video uploads, since the model architecture (`ResNeXt50 → LSTM`) expects a sequence of frames. This feature adds a second input path for single-image uploads (`.jpg` / `.png`) without retraining or changing the model in any way.
+
+**How it works:**
+- The uploaded image is run through the same MTCNN face detection and crop pipeline as video frames (`_detect_face()` is reused as-is)
+- The single cropped face (112×112) is repeated 20 times to build an artificial sequence tensor of shape `(1, 20, 3, 112, 112)` — matching `SEQUENCE_LENGTH` used everywhere else
+- This tensor is passed through the **same trained Detectra checkpoint** used for video — no separate model, no separate weights
+- Implemented as `run_image_inference()` in `webapp/detector/inference.py`, routed through a dedicated view and URL
+
+**Route:**
+```python
+# webapp/detector/urls.py
+urlpatterns = [
+    path("",                 views.upload_view,       name="upload"),
+    path("upload/image/",    views.upload_image_view, name="upload_image"),
+    path("result/<int:pk>/", views.result_view,        name="result"),
+    path("history/",         views.history_view,       name="history"),
+]
+```
+
+**Important honesty note:** Repeating a single frame 20 times means every "frame" the LSTM sees is identical. There is no real motion, no real frame-to-frame change for the LSTM to analyse — its temporal reasoning is effectively disabled in this mode. The classification in image mode therefore rests entirely on ResNeXt's spatial feature extraction (the same CNN that also drives the per-frame analysis in video mode), not on temporal inconsistency detection. The UI reflects this honestly by labelling image results as **"Detection mode: Single Image"** rather than reporting a frame count that would imply temporal video analysis. Grad-CAM heatmaps are generated for image mode the same way as video mode, since Grad-CAM operates on the CNN stage regardless of input type.
 
 ---
 
@@ -117,7 +164,8 @@ Detectra/
 │   ├── __init__.py
 │   ├── resnext.py             ← Part A: ResNeXt50 feature extractor
 │   ├── lstm.py                ← Part B: LSTM classifier
-│   ├── Detectra.py            ← Combined hybrid model
+│   ├── Detectra.py             ← Combined hybrid model
+│   ├── gradcam.py             ← Grad-CAM heatmap generation (layer4 hook)
 │   └── verify_model.py        ← Architecture verification
 ├── training/
 │   ├── __init__.py
@@ -158,10 +206,10 @@ Detectra/
     └── detector/
         ├── __init__.py
         ├── apps.py            ← model loaded at startup
-        ├── inference.py       ← preprocessing + inference engine
+        ├── inference.py       ← preprocessing + inference engine (video + image + Grad-CAM)
         ├── models.py          ← PredictionRecord DB model
-        ├── views.py           ← upload + result + history views
-        ├── urls.py
+        ├── views.py           ← upload (video) + upload_image + result + history views
+        ├── urls.py            ← "/" video, "/upload/image/" image, "/result/<id>/", "/history/"
         ├── migrations/
         └── templates/
             └── detector/
@@ -169,6 +217,13 @@ Detectra/
                 ├── upload.html
                 ├── result.html
                 └── history.html
+```
+
+Media output during inference (not part of the repo, generated at runtime):
+```
+media/
+├── face_grids/      ← MTCNN bounding-box grid (video + image)
+└── gradcam_grids/   ← Grad-CAM heatmap grid (video + image)
 ```
 
 ---
@@ -538,9 +593,10 @@ Open your browser at: **http://127.0.0.1:8000**
 
 | Page | URL | Description |
 |---|---|---|
-| Upload | `/` | Drag and drop video upload |
-| Result | `/result/<id>/` | Prediction with confidence score and face grid |
-| History | `/history/` | All past predictions from database |
+| Upload (video) | `/` | Drag and drop video upload |
+| Upload (image) | `/upload/image/` | Single image upload — same model, no LSTM temporal signal |
+| Result | `/result/<id>/` | Prediction with confidence score, face grid, and Grad-CAM heatmap |
+| History | `/history/` | All past predictions (video and image) from database |
 
 **Inference pipeline per uploaded video:**
 1. File validated (format + size) before saving to disk
@@ -550,11 +606,24 @@ Open your browser at: **http://127.0.0.1:8000**
 5. 20 frames sampled as sequence input to model
 6. ResNeXt50 extracts 2048-d features per frame
 7. LSTM classifies temporal sequence
-8. Result returned: REAL / FAKE / UNCERTAIN + confidence %
+8. Grad-CAM heatmap generated per sampled frame (`layer4` hook, no weight changes)
+9. Result returned: REAL / FAKE / UNCERTAIN + confidence %
+10. Temp file deleted immediately after inference
+11. Result stored permanently in SQLite database
+
+**Inference pipeline per uploaded image (single-frame mode):**
+1. File validated (format + size) before saving to disk
+2. MTCNN detects and crops the single face region
+3. Face resized to 112×112 and normalised
+4. The single face frame is repeated 20× to build a `(1, 20, 3, 112, 112)` tensor — no real temporal signal, same trained checkpoint
+5. ResNeXt50 extracts 2048-d features (identical across all 20 repeated frames)
+6. LSTM forward pass completes structurally but contributes no genuine temporal information
+7. Grad-CAM heatmap generated for the single face
+8. Result returned: REAL / FAKE / UNCERTAIN + confidence %, UI labelled **"Detection mode: Single Image"**
 9. Temp file deleted immediately after inference
 10. Result stored permanently in SQLite database
 
-**Confidence threshold:** Videos with max confidence below 75% are flagged as **UNCERTAIN**.
+**Confidence threshold:** Videos and images with max confidence below 75% are flagged as **UNCERTAIN**.
 
 ---
 
@@ -666,6 +735,12 @@ This is expected — MPS acceleration is active. Each epoch takes ~40 seconds on
 
 ### VS Code CSS linter warning on Django template variables
 This is a false alarm — VS Code's CSS linter does not understand Django template syntax. The fix is to use `data-width` attributes and set widths via JavaScript instead of inline `style="{{ value }}"`. See `history.html` for the implemented fix.
+
+### Grad-CAM grid is missing or blank on the result page
+Check `logs/` or the Django console for `Grad-CAM grid generation failed`. This is caught and logged as a warning, not a hard failure, so video/image detection still completes normally even if Grad-CAM fails. Common causes: `layer4` hook not registered before the forward pass, or `cam.remove_hooks()` not called after a previous request leaving stale hooks attached. Restart the Django server to clear any stuck hook state.
+
+### Image mode confidence seems inconsistent with what a video of the same person would show
+This is expected, not a bug. Single-image mode repeats one frame 20 times, so the LSTM receives no real temporal variation — the prediction comes entirely from ResNeXt's spatial features on that one frame. Video mode benefits from genuine frame-to-frame analysis. Do not present image-mode results as equivalent in reliability to video-mode results during the defense; the README and UI both label this explicitly.
 
 ---
 
