@@ -6,6 +6,7 @@ Upload and result views with:
   - Result page served from DB record (no session dependency)
   - Recent predictions history page
   - Separate routes for video vs single-image detection
+  - PDF report download for any saved result
 """
 
 import os
@@ -17,11 +18,13 @@ from typing import Optional
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
+from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 
 from detector.inference import run_inference, run_image_inference
 from detector.models import PredictionRecord
+from detector.report import render_report_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -287,6 +290,52 @@ def result_view(request, pk: int):
         "detection_mode":   record.detection_mode,
     }
     return render(request, "detector/result.html", context)
+
+
+# ── PDF report download view ──────────────────────────────────────────────────
+
+@require_http_methods(["GET"])
+def download_report_view(request, pk: int):
+    """
+    Generate and return a downloadable PDF report for a PredictionRecord.
+
+    Reuses existing saved images (face_grid_path, gradcam_grid_path) from
+    disk — nothing is recomputed from the model. If an image is missing
+    (e.g. Grad-CAM failed silently during inference, as already handled
+    elsewhere), the PDF still generates with whatever is available.
+    """
+    record = get_object_or_404(PredictionRecord, pk=pk)
+
+    try:
+        pdf_bytes = render_report_pdf(record)
+    except Exception as e:
+        # Don't let a PDF rendering issue take down the result page flow —
+        # log it and send the user back to the result page with an error.
+        logger.error(f"PDF report generation failed for record {pk}: {e}")
+        return render(request, "detector/result.html", {
+            "record":           record,
+            "label":            record.label,
+            "confidence":       record.confidence,
+            "real_prob":        record.real_probability,
+            "fake_prob":        record.fake_probability,
+            "frames_analyzed":  record.frames_analyzed,
+            "face_grid_url":    record.face_grid_url,
+            "gradcam_grid_url": record.gradcam_grid_url,
+            "filename":         record.filename,
+            "processing_time":  record.processing_time,
+            "created_at":       record.created_at,
+            "record_id":        record.pk,
+            "detection_mode":   record.detection_mode,
+            "report_error":     "PDF report could not be generated. Please try again.",
+        })
+
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    safe_name = Path(record.filename).stem or "detectra_report"
+    response["Content-Disposition"] = (
+        f'attachment; filename="detectra_report_{safe_name}_{record.pk}.pdf"'
+    )
+    logger.info(f"PDF report downloaded for record id={record.pk}")
+    return response
 
 
 # ── History view ──────────────────────────────────────────────────────────────

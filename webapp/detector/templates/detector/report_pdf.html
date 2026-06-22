@@ -1,0 +1,319 @@
+{# webapp/detector/templates/detector/report_pdf.html #}
+{# Standalone print document — NOT extending base.html (this isn't a web page). #}
+{# Colors/fonts mirror result.html's palette for visual consistency. #}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 2.2cm 1.8cm 2cm 1.8cm;
+    @bottom-center {
+      content: "Detectra — Deepfake Detection Report — Page " counter(page) " of " counter(pages);
+      font-size: 9px;
+      color: #9a9a9a;
+      font-family: 'DejaVu Sans Mono', monospace;
+    }
+  }
+
+  :root {
+    --charcoal: #2b3338;
+    --charcoal-soft: #3c454b;
+    --slate: #6b7680;
+    --slate-light: #8b95a0;
+    --pale-gray: #f4f4f4;
+    --safe: #3e9c6e;
+    --safe-bg: #eaf5ef;
+    --danger: #c75c50;
+    --danger-bg: #fbece9;
+    --marker: #d3a23c;
+    --marker-soft: #fbf2dd;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    color: var(--charcoal);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .mono { font-family: 'DejaVu Sans Mono', monospace; }
+
+  /* ── Header ── */
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid var(--charcoal);
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+  }
+  .report-header h1 {
+    font-size: 19px;
+    margin: 0 0 4px 0;
+    color: var(--charcoal);
+  }
+  .report-header .subtitle {
+    font-size: 11px;
+    color: var(--slate);
+    margin: 0;
+  }
+  .report-header .meta-right {
+    text-align: right;
+    font-size: 10.5px;
+    color: var(--slate);
+    font-family: 'DejaVu Sans Mono', monospace;
+  }
+
+  /* ── Verdict block ── */
+  .verdict-block {
+    border: 1.5px solid;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .verdict-block.REAL      { background: var(--safe-bg); border-color: #cfe6da; }
+  .verdict-block.FAKE      { background: var(--danger-bg); border-color: #f0d4d1; }
+  .verdict-block.UNCERTAIN { background: var(--marker-soft); border-color: #ecd9af; }
+
+  .verdict-eyebrow {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-family: 'DejaVu Sans Mono', monospace;
+  }
+  .REAL .verdict-eyebrow      { color: #4d9a73; }
+  .FAKE .verdict-eyebrow      { color: #cf6b62; }
+  .UNCERTAIN .verdict-eyebrow { color: #c9962e; }
+
+  .verdict-label {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'DejaVu Sans Mono', monospace;
+    margin-bottom: 6px;
+  }
+  .REAL .verdict-label      { color: #225b3e; }
+  .FAKE .verdict-label      { color: #7a2e28; }
+  .UNCERTAIN .verdict-label { color: #7a5c1c; }
+
+  .verdict-conf {
+    font-size: 12.5px;
+    color: var(--charcoal-soft);
+  }
+  .verdict-conf strong { font-family: 'DejaVu Sans Mono', monospace; }
+
+  /* ── Probability table ── */
+  .prob-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 22px;
+  }
+  .prob-table td {
+    border: 1px solid #ececec;
+    padding: 10px 14px;
+    width: 50%;
+  }
+  .prob-table .plabel {
+    font-size: 9.5px;
+    color: var(--slate-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: 'DejaVu Sans Mono', monospace;
+    margin-bottom: 4px;
+  }
+  .prob-table .pvalue {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'DejaVu Sans Mono', monospace;
+  }
+  .prob-table .real .pvalue { color: var(--safe); }
+  .prob-table .fake .pvalue { color: var(--danger); }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--slate-light);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 22px 0 10px 0;
+    font-family: 'DejaVu Sans Mono', monospace;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  /* ── Image blocks ── */
+  .image-block {
+    background: #fcfcfc;
+    border: 1px solid #ececec;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+  .image-block img {
+    max-width: 100%;
+    max-height: 7.5cm;
+    border-radius: 4px;
+    border: 1px solid #e8e8e8;
+  }
+  .image-caption {
+    font-size: 10px;
+    color: var(--slate-light);
+    margin-top: 8px;
+    font-family: 'DejaVu Sans Mono', monospace;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .missing-note {
+    font-size: 10.5px;
+    color: var(--slate-light);
+    font-style: italic;
+    padding: 10px 0;
+  }
+
+  /* ── Metadata grid ── */
+  .meta-grid {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .meta-grid td {
+    border: 1px solid #ececec;
+    padding: 9px 12px;
+    width: 50%;
+  }
+  .meta-grid .k {
+    font-size: 9.5px;
+    color: var(--slate-light);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'DejaVu Sans Mono', monospace;
+    margin-bottom: 3px;
+  }
+  .meta-grid .v {
+    font-size: 12px;
+    color: var(--charcoal);
+    font-weight: 700;
+    font-family: 'DejaVu Sans Mono', monospace;
+    word-break: break-all;
+  }
+
+  .footer-note {
+    margin-top: 26px;
+    font-size: 9.5px;
+    color: var(--slate-light);
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+  <div class="report-header">
+    <div>
+      <h1>Detectra — Deepfake Detection Report</h1>
+      <p class="subtitle">Automated analysis summary, generated for archival and review purposes</p>
+    </div>
+    <div class="meta-right">
+      Generated: {{ created_at|date:"Y-m-d H:i" }}<br>
+      Record ID: #{{ record.pk }}
+    </div>
+  </div>
+
+  <div class="verdict-block {{ label }}">
+    <div class="verdict-eyebrow">
+      {% if label == "REAL" %}No manipulation detected{% elif label == "FAKE" %}Manipulation detected{% else %}Inconclusive{% endif %}
+    </div>
+    <div class="verdict-label">{{ label }}</div>
+    <div class="verdict-conf">Confidence: <strong>{{ confidence }}%</strong></div>
+  </div>
+
+  <table class="prob-table">
+    <tr>
+      <td class="real">
+        <div class="plabel">P(Real)</div>
+        <div class="pvalue">{{ real_prob }}%</div>
+      </td>
+      <td class="fake">
+        <div class="plabel">P(Fake)</div>
+        <div class="pvalue">{{ fake_prob }}%</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section-title">Thumbnail / Analyzed Frame</div>
+  {% if face_grid_uri %}
+  <div class="image-block">
+    <img src="{{ face_grid_uri }}" alt="Detected face regions">
+    <div class="image-caption">
+      Green boxes indicate face regions detected by MTCNN.
+      {{ frames_analyzed }} frame(s) with detected faces were analyzed by the model.
+    </div>
+  </div>
+  {% else %}
+  <div class="missing-note">Face grid image is not available for this result.</div>
+  {% endif %}
+
+  <div class="section-title">Grad-CAM Heatmap — Model Attention</div>
+  {% if gradcam_grid_uri %}
+  <div class="image-block">
+    <img src="{{ gradcam_grid_uri }}" alt="Grad-CAM heatmap overlay">
+    <div class="image-caption">
+      Red/yellow regions indicate areas the model weighted most heavily toward its {{ label }} decision.
+      Computed via Grad-CAM on the ResNeXt50 feature extractor (layer4).
+    </div>
+  </div>
+  {% else %}
+  <div class="missing-note">Grad-CAM heatmap is not available for this result.</div>
+  {% endif %}
+
+  <div class="section-title">Analysis Details</div>
+  <table class="meta-grid">
+    <tr>
+      <td>
+        <div class="k">File analyzed</div>
+        <div class="v">{{ filename }}</div>
+      </td>
+      <td>
+        <div class="k">Detection mode</div>
+        <div class="v">{{ detection_mode|title }}</div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="k">Frames with faces</div>
+        <div class="v">{{ frames_analyzed }}</div>
+      </td>
+      <td>
+        <div class="k">Processing time</div>
+        <div class="v">{% if processing_time %}{{ processing_time }}s{% else %}—{% endif %}</div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="k">Model architecture</div>
+        <div class="v">ResNeXt50 + LSTM</div>
+      </td>
+      <td>
+        <div class="k">Face detector</div>
+        <div class="v">MTCNN (facenet-pytorch)</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer-note">
+    This report was generated automatically by Detectra, a deepfake video/image detection system.
+    Results reflect the output of an automated model and should be interpreted as one signal among
+    several when assessing media authenticity, not as definitive proof.
+  </div>
+
+</body>
+</html>

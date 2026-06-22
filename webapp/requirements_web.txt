@@ -12,3 +12,4 @@ opencv-python-headless>=4.5.0
 numpy>=1.21.0
 scikit-learn>=0.24.0
 dj-database-url>=1.0.0
+weasyprint>=53.0.0
