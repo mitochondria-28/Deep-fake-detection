@@ -12,6 +12,7 @@
 - [Additional Features](#additional-features)
   - [Grad-CAM Explainability](#grad-cam-explainability)
   - [Single-Image Detection Mode](#single-image-detection-mode)
+  - [PDF Report Generation](#pdf-report-generation)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Dataset](#dataset)
@@ -76,7 +77,7 @@ Input Video
 
 ## Additional Features
 
-Two features were added on top of the core video pipeline to broaden scope and add model explainability, without retraining or modifying the trained checkpoint in any way.
+Three features were added on top of the core video pipeline to broaden scope and add model explainability, without retraining or modifying the trained checkpoint in any way.
 
 ### Grad-CAM Explainability
 
@@ -116,6 +117,28 @@ urlpatterns = [
 
 **Important honesty note:** Repeating a single frame 20 times means every "frame" the LSTM sees is identical. There is no real motion, no real frame-to-frame change for the LSTM to analyse — its temporal reasoning is effectively disabled in this mode. The classification in image mode therefore rests entirely on ResNeXt's spatial feature extraction (the same CNN that also drives the per-frame analysis in video mode), not on temporal inconsistency detection. The UI reflects this honestly by labelling image results as **"Detection mode: Single Image"** rather than reporting a frame count that would imply temporal video analysis. Grad-CAM heatmaps are generated for image mode the same way as video mode, since Grad-CAM operates on the CNN stage regardless of input type.
 
+### PDF Report Generation
+
+Every saved result — video or image — can be downloaded as a self-contained PDF report, suitable for archival, sharing, or printing.
+
+**How it works:**
+- Built with [WeasyPrint](https://doc.courtbouillon.org/weasyprint/) (HTML/CSS → PDF), so the report's visual language mirrors `result.html`'s palette without hand-positioning boxes
+- Reuses **existing saved images** (`face_grid_path`, `gradcam_grid_path`) already written to `MEDIA_ROOT` during inference — nothing is recomputed from the model, MTCNN, or Grad-CAM at download time
+- Implemented in `webapp/detector/report.py`: `build_report_context()` assembles data from the `PredictionRecord`, `render_report_pdf()` renders `detector/report_pdf.html` to PDF bytes
+- Served via a dedicated view (`download_report_view`) and route, returned as a downloadable attachment (not displayed inline in the browser)
+
+**Route:**
+```python
+# webapp/detector/urls.py
+path("result/<int:pk>/report/", views.download_report_view, name="download_report"),
+```
+
+**Report contents:** verdict (REAL/FAKE/UNCERTAIN) with confidence, P(Real)/P(Fake) breakdown, the face detection grid, the Grad-CAM heatmap grid, and analysis metadata (filename, detection mode, frames analyzed, processing time, model architecture).
+
+**Graceful degradation:** If an image is missing on disk (e.g. Grad-CAM failed silently during inference, as already handled elsewhere in the pipeline), `_resolve_media_path()` in `report.py` returns `None` for that image and the template shows an italic "not available" note instead of breaking the whole PDF. A PDF always generates as long as the underlying `PredictionRecord` exists, regardless of which optional images succeeded.
+
+**System dependency to be aware of:** WeasyPrint is a Python package, but it depends on system-level C libraries (Pango, GLib, cairo) that are **not** installed by `pip install weasyprint` alone. On macOS these must be installed separately via Homebrew (`brew install pango`), and the server must be restarted afterward for the fix to take effect. See [Troubleshooting](#troubleshooting) below.
+
 ---
 
 ## Tech Stack
@@ -129,6 +152,7 @@ urlpatterns = [
 | Image Processing | Pillow, NumPy |
 | Data Splitting | scikit-learn |
 | Web Framework | Django 3.2+ |
+| PDF Generation | WeasyPrint (+ Pango, GLib, cairo via system libs) |
 | Database (dev) | SQLite |
 | Database (prod) | PostgreSQL |
 | Production Server | Gunicorn + WhiteNoise |
@@ -207,16 +231,19 @@ Detectra/
         ├── __init__.py
         ├── apps.py            ← model loaded at startup
         ├── inference.py       ← preprocessing + inference engine (video + image + Grad-CAM)
+        ├── report.py          ← PDF report builder (reuses saved images, no model recompute)
         ├── models.py          ← PredictionRecord DB model
-        ├── views.py           ← upload (video) + upload_image + result + history views
-        ├── urls.py            ← "/" video, "/upload/image/" image, "/result/<id>/", "/history/"
+        ├── views.py           ← upload (video) + upload_image + result + history + download_report views
+        ├── urls.py            ← "/" video, "/upload/image/" image, "/result/<id>/", "/result/<id>/report/", "/history/"
         ├── migrations/
         └── templates/
             └── detector/
                 ├── base.html
                 ├── upload.html
+                ├── upload_image.html
                 ├── result.html
-                └── history.html
+                ├── history.html
+                └── report_pdf.html   ← standalone print document, not extending base.html
 ```
 
 Media output during inference (not part of the repo, generated at runtime):
@@ -596,6 +623,7 @@ Open your browser at: **http://127.0.0.1:8000**
 | Upload (video) | `/` | Drag and drop video upload |
 | Upload (image) | `/upload/image/` | Single image upload — same model, no LSTM temporal signal |
 | Result | `/result/<id>/` | Prediction with confidence score, face grid, and Grad-CAM heatmap |
+| Download report | `/result/<id>/report/` | Downloads a PDF report for that result (video or image) |
 | History | `/history/` | All past predictions (video and image) from database |
 
 **Inference pipeline per uploaded video:**
@@ -610,6 +638,7 @@ Open your browser at: **http://127.0.0.1:8000**
 9. Result returned: REAL / FAKE / UNCERTAIN + confidence %
 10. Temp file deleted immediately after inference
 11. Result stored permanently in SQLite database
+12. User may download a PDF report at any time from `/result/<id>/report/`, built from the stored record and saved images — no recomputation
 
 **Inference pipeline per uploaded image (single-frame mode):**
 1. File validated (format + size) before saving to disk
@@ -622,6 +651,7 @@ Open your browser at: **http://127.0.0.1:8000**
 8. Result returned: REAL / FAKE / UNCERTAIN + confidence %, UI labelled **"Detection mode: Single Image"**
 9. Temp file deleted immediately after inference
 10. Result stored permanently in SQLite database
+11. User may download a PDF report at any time from `/result/<id>/report/`, same as video mode
 
 **Confidence threshold:** Videos and images with max confidence below 75% are flagged as **UNCERTAIN**.
 
@@ -741,6 +771,20 @@ Check `logs/` or the Django console for `Grad-CAM grid generation failed`. This 
 
 ### Image mode confidence seems inconsistent with what a video of the same person would show
 This is expected, not a bug. Single-image mode repeats one frame 20 times, so the LSTM receives no real temporal variation — the prediction comes entirely from ResNeXt's spatial features on that one frame. Video mode benefits from genuine frame-to-frame analysis. Do not present image-mode results as equivalent in reliability to video-mode results during the defense; the README and UI both label this explicitly.
+
+### Clicking "Download PDF Report" just reloads the result page instead of downloading
+Check the Django console for a line like `PDF report generation failed for record <id>: ...`. The view's `except` block catches any rendering failure and silently re-renders the result page — this is intentional so a PDF bug never breaks the working detection flow, but it means failures are easy to miss without checking the logs.
+
+The most common cause is `cannot load library 'libgobject-2.0-0'` (or similar Pango/cairo/GLib errors). This means WeasyPrint's **Python package** is installed, but its required **system-level C libraries** are not — `pip install weasyprint` alone does not install these. Fix:
+```bash
+brew install pango
+```
+Then **restart the Django server** — the running Python process already failed to locate the library once via `ctypes.util.find_library()`, so installing afterward has no effect until restarted. On Apple Silicon, if the error persists after restarting, confirm Homebrew's install path and export it explicitly before starting the server:
+```bash
+brew --prefix pango   # confirm it shows /opt/homebrew
+export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH"
+python3 manage.py runserver
+```
 
 ---
 
